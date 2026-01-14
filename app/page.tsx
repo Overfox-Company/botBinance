@@ -3,6 +3,8 @@ import { GetAdversitingList } from "@/actions/advertisements/GetAdvertinsingList
 import './globals.css'
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { CancelCircleIcon } from '@hugeicons-pro/core-stroke-standard';
+import { HugeiconsIcon } from '@hugeicons/react';
 import {
   Table,
   TableBody,
@@ -12,6 +14,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { TypeBinanceAd } from "@/types/DataBinance";
+import { AdStatusCell } from "@/components/AdsStatusComponent";
+
+// components/ads/status-badge.tsx
 
 
 
@@ -31,11 +36,6 @@ function formatDate(ms: number) {
   }).format(new Date(ms));
 }
 
-function statusBadge(status: number) {
-  // (simple) 1 = activo; lo demás lo mostramos como secundario.
-  if (status === 1) return <Badge>Activo</Badge>;
-  return <Badge variant="secondary">Estado {status}</Badge>;
-}
 
 export default async function Home() {
   const data = await GetAdversitingList();
@@ -145,7 +145,9 @@ export default async function Home() {
                     </div>
                   </TableCell>
 
-                  <TableCell>{statusBadge(ad.advStatus)}</TableCell>
+                  <TableCell>
+                    <AdStatusCell ad={ad as { advNo: string; advStatus: 1 | 3 | 4 }} />
+                  </TableCell>
 
                   <TableCell className="text-right">
                     {/* Ruta de detalle: tú decides el path */}
