@@ -15,6 +15,32 @@ function formatDate(ms: number) {
         timeStyle: "short",
     }).format(new Date(ms));
 }
+type SpreadPercentProps = {
+    value: number | null;
+};
+
+export function SpreadPercent({ value }: SpreadPercentProps) {
+    if (value === null) {
+        return <span className="text-muted-foreground">—</span>;
+    }
+
+    const isPositive = value > 0;
+    const isNegative = value < 0;
+
+    const sign = isPositive ? "+" : isNegative ? "−" : "";
+    const colorClass = isPositive
+        ? "text-emerald-600"
+        : isNegative
+            ? "text-red-600"
+            : "text-muted-foreground";
+
+    return (
+        <span className={`text-xs font-medium ${colorClass}`}>
+            {sign}
+            {Math.abs(value).toFixed(2)}% de diferencia
+        </span>
+    );
+}
 
 export default async function MarketBanner() {
     const m = await GetP2PMarket();
@@ -49,14 +75,11 @@ export default async function MarketBanner() {
 
     return (
         <section className="rounded-lg border p-4 bg-muted/20 space-y-3">
-            {
-                refresh
-
-            }
+            {refresh}
 
             <div className="flex items-start justify-between gap-4">
                 <div className="space-y-1">
-                    <div className="text-lg font-semibold">Mercado P2P {m.pair}</div>
+
                     <div className="text-xs text-muted-foreground">
                         Actualizado: {formatDate(m.ts)}
                     </div>
@@ -66,33 +89,82 @@ export default async function MarketBanner() {
                     <Badge variant="secondary">
                         Ordenes de venta {m.buy.samples} • Ordenes de compra {m.sell.samples}
                     </Badge>
-
                 </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 {/* Comprar USDT => mirar SELL */}
-                <div className="rounded-lg border p-3 bg-background">
-                    <div className="text-xs text-muted-foreground">Comprar USDT</div>
-                    <div className="text-2xl font-semibold">Bs {formatVES(m.buy.best, 0)}</div>
+                <div className="relative rounded-lg border p-3 bg-background space-y-2">
+                    {/* Extremos – esquina superior derecha */}
+                    <div className="absolute top-2 right-2 text-[11px] text-muted-foreground bg-muted/60 rounded-md px-2 py-1 leading-tight">
+                        <div>
+                            <span className="opacity-70">Min</span>{" "}
+                            <span className="font-medium text-white">
+                                Bs {formatVES(Number(m.buy.minOrder?.price ?? null), 0)}
+                            </span>
+                        </div>
+                        <div>
+                            <span className="opacity-70">Max</span>{" "}
+                            <span className="font-medium text-white">
+                                Bs {formatVES(Number(m.buy.maxOrder?.price ?? null), 0)}
+                            </span>
+                        </div>
+                    </div>
+
+                    {/* Contenido principal */}
+                    <div className="text-xs text-muted-foreground">Comprar USDT (promedio)</div>
+
+                    <div className="text-2xl font-semibold">
+                        Bs {formatVES(m.buy.avg, 0)}
+                    </div>
+
                     <div className="text-xs text-muted-foreground">
-                        Promedio: Bs {formatVES(m.buy.avg, 0)} • Mediana: Bs {formatVES(m.buy.median, 0)}
+                        Mediana:{" "}
+                        <span className="font-medium">
+                            Bs {formatVES(m.buy.median, 0)}
+                        </span>
                     </div>
                 </div>
+
 
                 {/* Vender USDT => mirar BUY */}
-                <div className="rounded-lg border p-3 bg-background">
-                    <div className="text-xs text-muted-foreground">Vender USDT</div>
-                    <div className="text-2xl font-semibold">Bs {formatVES(m.sell.best, 0)}</div>
+                <div className="relative rounded-lg border p-3 bg-background space-y-2">
+                    {/* Extremos – esquina superior derecha */}
+                    <div className="absolute top-2 right-2 text-[11px] text-muted-foreground bg-muted/60 rounded-md px-2 py-1 leading-tight">
+                        <div>
+                            <span className="opacity-70">Min</span>{" "}
+                            <span className="font-medium text-white">
+                                Bs {formatVES(Number(m.sell.minOrder?.price ?? null), 0)}
+                            </span>
+                        </div>
+                        <div>
+                            <span className="opacity-70">Max</span>{" "}
+                            <span className="font-medium text-white">
+                                Bs {formatVES(Number(m.sell.maxOrder?.price ?? null), 0)}
+                            </span>
+                        </div>
+                    </div>
+
+                    {/* Contenido principal */}
+                    <div className="text-xs text-muted-foreground">Vender USDT (promedio)</div>
+
+                    <div className="text-2xl font-semibold">
+                        Bs {formatVES(m.sell.avg, 0)}
+                    </div>
+
                     <div className="text-xs text-muted-foreground">
-                        Promedio: Bs {formatVES(m.sell.avg, 0)} • Mediana: Bs {formatVES(m.sell.median, 0)}
+                        Mediana:{" "}
+                        <span className="font-medium">
+                            Bs {formatVES(m.sell.median, 0)}
+                        </span>
                     </div>
                 </div>
 
-                {/* Spread */}
-                <div className="rounded-lg border p-3 bg-background">
+
+                {/* Spread (basado en promedios) */}
+                <div className="rounded-lg border p-3 bg-background space-y-2">
                     <div className="text-xs text-muted-foreground">
-                        Diferencia entre compra y venta
+                        Diferencia (promedio venta − promedio compra)
                     </div>
 
                     <div className="text-2xl font-semibold">
@@ -100,11 +172,12 @@ export default async function MarketBanner() {
                     </div>
 
                     <div className="text-xs text-muted-foreground">
-                        {spreadPct === null ? "—" : `${spreadPct.toFixed(2)}% de diferencia`}
+                        <SpreadPercent value={m.pcntSpread} />
                     </div>
                 </div>
-
             </div>
+
         </section>
+
     );
 }

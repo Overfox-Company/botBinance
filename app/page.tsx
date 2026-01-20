@@ -65,6 +65,12 @@ export default async function Home() {
 
   return (
     <main className="mx-auto w-full max-w-8xl p-12 space-y-4">
+      <div className="space-y-1">
+        <h1 className="text-2xl font-semibold">Mercado P2P USDT/VES</h1>
+        <p className="text-sm text-muted-foreground">
+          Vista del mercado actual
+        </p>
+      </div>
       <MarketBanner />
       {/* tu tabla */}
 

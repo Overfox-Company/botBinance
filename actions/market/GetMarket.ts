@@ -121,7 +121,8 @@ export async function GetP2PMarket() {
 
         const buyBest = sellPrices.length ? Math.min(...sellPrices) : sellSide.minPrice; // comprar = menor SELL
         const sellBest = buyPrices.length ? Math.max(...buyPrices) : buySide.maxPrice;  // vender  = mayor BUY
-
+        const buyAvg = mean(sellPrices); // promedio para comprar USDT
+        const sellAvg = mean(buyPrices); // promedio para vender USDT
         return {
             ok: true as const,
             ts: Date.now(),
@@ -151,7 +152,8 @@ export async function GetP2PMarket() {
                 maxOrder: compactOrder(buySide.maxItem), // mayor precio (mejor para vender)
             },
 
-            spread: buyBest !== null && sellBest !== null ? sellBest - buyBest : null,
+            spread: buyAvg !== null && sellAvg !== null ? sellAvg - buyAvg : null,
+            pcntSpread: buyAvg !== null && sellAvg !== null ? ((sellAvg - buyAvg) / buyAvg) * 100 : null,
         };
     } catch (e: any) {
         console.log("GET P2P MARKET ERR:", e?.response?.status, e?.response?.data);
