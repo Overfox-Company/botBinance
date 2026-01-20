@@ -15,6 +15,9 @@ import {
 } from "@/components/ui/table";
 import { TypeBinanceAd } from "@/types/DataBinance";
 import { AdStatusCell } from "@/components/AdsStatusComponent";
+import { EditableNumberCell } from "@/components/editable-cell";
+import { UpdateP2PAdParams } from "@/actions/advertisements/UpdateP2PAdParams"; // ajusta ruta real
+import MarketBanner from "@/components/MarketBanner";
 
 // components/ads/status-badge.tsx
 
@@ -35,6 +38,17 @@ function formatDate(ms: number) {
     timeStyle: "short",
   }).format(new Date(ms));
 }
+function toNumberString(raw: string) {
+  // quita separadores y espacios, deja punto decimal
+  return raw.replace(/\s/g, "").replace(/\./g, "").replace(/,/g, ".");
+}
+
+function validateNumber(raw: string) {
+  const n = Number(raw);
+  if (!raw || Number.isNaN(n)) return "Número inválido";
+  if (n < 0) return "No puede ser negativo";
+  return null;
+}
 
 
 export default async function Home() {
@@ -51,6 +65,9 @@ export default async function Home() {
 
   return (
     <main className="mx-auto w-full max-w-8xl p-12 space-y-4">
+      <MarketBanner />
+      {/* tu tabla */}
+
       <header className="flex items-end justify-between gap-4">
         <div className="space-y-1">
           <h1 className="text-2xl font-semibold">P2P Anuncios</h1>
@@ -68,9 +85,9 @@ export default async function Home() {
             <TableRow>
               <TableHead className="w-[92px]">Tipo</TableHead>
               <TableHead>Par</TableHead>
-              <TableHead className="text-right">Precio</TableHead>
-              <TableHead>Disponible</TableHead>
-              <TableHead>Límites</TableHead>
+              <TableHead className="w-[160px]">Precio</TableHead>
+              <TableHead className=" w-[180px]">Disponible</TableHead>
+              <TableHead className=" w-[260px]">Límites</TableHead>
               <TableHead>Métodos</TableHead>
 
               {/* NUEVAS */}
@@ -78,7 +95,7 @@ export default async function Home() {
               <TableHead>Actualizado</TableHead>
 
               <TableHead className="w-[120px]">Estado</TableHead>
-              <TableHead className="w-[140px] text-right">Acción</TableHead>
+              <TableHead className="w-[140px] ">Acción</TableHead>
             </TableRow>
           </TableHeader>
 
@@ -100,26 +117,67 @@ export default async function Home() {
                     <div className="text-xs text-muted-foreground">ID {ad.advNo}</div>
                   </TableCell>
 
-                  <TableCell className="text-right font-semibold">
-                    {fiat} {formatNumberLike(ad.price, 3)}
+                  <TableCell className=" font-semibold">
+                    <EditableNumberCell
+                      advNo={String(ad.advNo)}
+                      field="price"
+                      raw={String(ad.price)}
+                      display={`${fiat} ${formatNumberLike(ad.price, 3)}`}
+                      inputClassName="w-[140px] text-right"
+                      min={0}
+                    />
                   </TableCell>
+
 
                   <TableCell>
                     <div className="font-medium">
-                      {formatNumberLike(ad.surplusAmount, 2)} {ad.asset}
+                      <EditableNumberCell
+                        advNo={String(ad.advNo)}
+                        field="initAmount"
+                        // si tu response trae initAmount úsalo; si no, como fallback toma surplusAmount
+                        raw={String((ad as any).initAmount ?? ad.surplusAmount)}
+                        display={`${formatNumberLike(ad.initAmount ?? ad.surplusAmount, 2)} ${ad.asset}`}
+                        inputClassName="w-[160px]"
+                        min={0}
+                      />
                     </div>
-                    <div className="text-xs text-muted-foreground">
+
+                    {                 /*   <div className="text-xs text-muted-foreground">
                       pago en {ad.payTimeLimit} min
+                    </div>*/}
+                  </TableCell>
+                  <TableCell>
+                    <div className="text-sm flex items-center justify-start gap-2">
+                      <span>{fiat}</span>
+
+                      {/* MIN */}
+                      <EditableNumberCell
+                        advNo={String(ad.advNo)}
+                        field="minSingleTransAmount"
+                        raw={String(ad.minSingleTransAmount)}
+                        display={formatNumberLike(ad.minSingleTransAmount, 0)}
+                        inputClassName="w-[120px]"
+                        min={0}
+                        // opcional: para evitar que pongan min > max
+                        max={Number(ad.maxSingleTransAmount)}
+                      />
+
+                      <span className="text-muted-foreground">—</span>
+
+                      <span>{fiat}</span>
+
+                      {/* MAX */}
+                      <EditableNumberCell
+                        advNo={String(ad.advNo)}
+                        field="maxSingleTransAmount"
+                        raw={String(ad.maxSingleTransAmount)}
+                        display={formatNumberLike(ad.maxSingleTransAmount, 0)}
+                        inputClassName="w-[140px]"
+                        min={Number(ad.minSingleTransAmount)}
+                      />
                     </div>
                   </TableCell>
 
-                  <TableCell>
-                    <div className="text-sm">
-                      {fiat} {formatNumberLike(ad.minSingleTransAmount, 0)}{" "}
-                      <span className="text-muted-foreground">—</span>{" "}
-                      {fiat} {formatNumberLike(ad.maxSingleTransAmount, 0)}
-                    </div>
-                  </TableCell>
 
                   <TableCell>
                     <div className="flex flex-wrap gap-1">

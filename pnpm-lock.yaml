@@ -11,6 +11,12 @@ importers:
       '@hugeicons-pro/core-duotone-standard':
         specifier: ^3.1.0
         version: 3.1.0
+      '@hugeicons-pro/core-solid-standard':
+        specifier: ^3.1.0
+        version: 3.1.0
+      '@hugeicons-pro/core-stroke-rounded':
+        specifier: ^3.1.0
+        version: 3.1.0
       '@hugeicons-pro/core-stroke-standard':
         specifier: ^3.1.0
         version: 3.1.0
@@ -204,6 +210,12 @@ packages:
 
   '@hugeicons-pro/core-duotone-standard@3.1.0':
     resolution: {integrity: sha512-1f3HQa+ZpRrTtAtld2VC4PrKAaIJSoqxCQ5aFzqf7tKERw1IjnQdKHXGvRLtWJR2jKlxf0RcM/ZdKEYTO6Sn/A==}
+
+  '@hugeicons-pro/core-solid-standard@3.1.0':
+    resolution: {integrity: sha512-zwVKOOFqBlfs+pvbBvBY4ZRvHepzDvs9DXx+8Doz0qgrnqMgy9KUPWbIn2SfLLD6m+q//hw8aIMgLQ8G+6H3rA==}
+
+  '@hugeicons-pro/core-stroke-rounded@3.1.0':
+    resolution: {integrity: sha512-Bid2s2di9M5nQqdvBi66zTZquWGIfyp5BWE3BhTGFzV50t5Noe07ylu2RFn6zB7VXFV9nrlEbTQmtF1Nm8H78g==}
 
   '@hugeicons-pro/core-stroke-standard@3.1.0':
     resolution: {integrity: sha512-QcVVlrckBT+KZvClTkFnrzTmdCBa8U1f8dBinrrvTyw+sNHe35wERlKrz9h7S1fJIj69Onm3R5NtzxNEPkaBXQ==}
@@ -2383,6 +2395,10 @@ snapshots:
       levn: 0.4.1
 
   '@hugeicons-pro/core-duotone-standard@3.1.0': {}
+
+  '@hugeicons-pro/core-solid-standard@3.1.0': {}
+
+  '@hugeicons-pro/core-stroke-rounded@3.1.0': {}
 
   '@hugeicons-pro/core-stroke-standard@3.1.0': {}
 

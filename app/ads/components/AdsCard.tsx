@@ -1,7 +1,6 @@
 import { NextPage } from 'next'
 // app/page.tsx
 import Image from "next/image";
-import { GetAdversitingList } from "@/actions/advertisements/GetAdvertinsingList";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -22,8 +21,6 @@ import {
 } from "@/components/ui/table";
 import { TypeBinanceAd, TypeTradeMethod, TypeTradeMethodCommissionRate } from '@/types/DataBinance';
 import { formatDate, formatNumberLike, safeArray, statusLabel, tradeTypeVariant } from '../functions/functions';
-import { HugeiconsIcon } from '@hugeicons/react';
-import { ArrowLeft01Icon } from '@hugeicons-pro/core-duotone-standard';
 import BackButton from '@/components/BackButton';
 
 
@@ -35,12 +32,14 @@ interface Props {
 }
 
 const AdsCard: NextPage<Props> = ({ ad }) => {
+
+
     const fiatSymbol = ad.fiatSymbol ?? ad.fiatUnit;
     const status = statusLabel(ad.advStatus);
 
     return <main className="mx-auto w-full max-w-8xl p-12 space-y-4">
         <BackButton />
-        <header className="flex items-end justify-between gap-4">
+        <header className="flex items-end justify-between gap-4 ">
 
             <div className="space-y-1">
 

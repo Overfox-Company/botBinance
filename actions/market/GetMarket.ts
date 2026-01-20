@@ -1,0 +1,165 @@
+"use server";
+
+import axios from "axios";
+
+type TradeType = "BUY" | "SELL";
+
+function median(nums: number[]) {
+    if (!nums.length) return null;
+    const a = [...nums].sort((x, y) => x - y);
+    const mid = Math.floor(a.length / 2);
+    return a.length % 2 ? a[mid] : (a[mid - 1] + a[mid]) / 2;
+}
+
+function mean(nums: number[]) {
+    if (!nums.length) return null;
+    const s = nums.reduce((acc, n) => acc + n, 0);
+    return s / nums.length;
+}
+
+function toNum(x: any) {
+    const n = Number(String(x ?? "").replace(",", "."));
+    return Number.isFinite(n) ? n : null;
+}
+
+/**
+ * Trae N anuncios del mercado P2P desde el endpoint público de la web P2P.
+ * Fuente endpoint: /bapi/c2c/v2/friendly/c2c/adv/search
+ */
+async function fetchMarketSide(tradeType: TradeType, rows = 20, page = 1) {
+    const body = {
+        page,
+        rows,
+        // puedes filtrar por métodos si quieres
+        asset: "USDT",
+        fiat: "VES",
+        tradeType,             // "BUY" o "SELL"
+        publisherType: null,   // a veces "merchant" / null
+    };
+
+    const r = await axios.post(
+        "https://p2p.binance.com/bapi/c2c/v2/friendly/c2c/adv/search",
+        body,
+
+    );
+    console.log("FETCH MARKET SIDE:", tradeType, r.data);
+    const items = Array.isArray(r.data?.data) ? r.data.data : [];
+    const prices = items
+        .map((it: any) => toNum(it?.adv?.price)) // en este endpoint suele venir en it.adv.price
+        .filter((n: number | null): n is number => n !== null);
+
+    return { items, prices };
+}
+
+export async function GetP2PMarket() {
+    try {
+        const PAGES = 5;
+        const ROWS = 20;
+
+        const pages = Array.from({ length: PAGES }, (_, i) => i + 1);
+
+        const [sellPages, buyPages] = await Promise.all([
+            Promise.all(pages.map((p) => fetchMarketSide("SELL", ROWS, p))),
+            Promise.all(pages.map((p) => fetchMarketSide("BUY", ROWS, p))),
+        ]);
+
+        const sellItems = sellPages.flatMap((x) => x.items);
+        const buyItems = buyPages.flatMap((x) => x.items);
+
+        const sellPrices = sellPages.flatMap((x) => x.prices);
+        const buyPrices = buyPages.flatMap((x) => x.prices);
+
+        const getItemPrice = (it: any) => {
+            const n = Number(String(it?.adv?.price ?? "").replace(",", "."));
+            return Number.isFinite(n) ? n : null;
+        };
+
+        const pickMinMax = (items: any[]) => {
+            let minItem: any = null;
+            let maxItem: any = null;
+            let minPrice: number | null = null;
+            let maxPrice: number | null = null;
+
+            for (const it of items) {
+                const p = getItemPrice(it);
+                if (p === null) continue;
+
+                if (minPrice === null || p < minPrice) {
+                    minPrice = p;
+                    minItem = it;
+                }
+                if (maxPrice === null || p > maxPrice) {
+                    maxPrice = p;
+                    maxItem = it;
+                }
+            }
+
+            return { minItem, minPrice, maxItem, maxPrice };
+        };
+
+        const compactOrder = (it: any) =>
+            it
+                ? {
+                    advNo: it?.adv?.advNo,
+                    price: it?.adv?.price,
+                    minSingleTransAmount: it?.adv?.minSingleTransAmount,
+                    maxSingleTransAmount: it?.adv?.maxSingleTransAmount,
+                    surplusAmount: it?.adv?.surplusAmount,
+                    nickName: it?.advertiser?.nickName,
+                    userType: it?.advertiser?.userType,
+                    monthOrderCount: it?.advertiser?.monthOrderCount,
+                    monthFinishRate: it?.advertiser?.monthFinishRate,
+                    tradeMethods: it?.adv?.tradeMethods ?? [],
+                }
+                : null;
+
+        // SELL side (tú compras USDT aquí)
+        const sellSide = pickMinMax(sellItems);
+
+        // BUY side (tú vendes USDT aquí)
+        const buySide = pickMinMax(buyItems);
+
+        const buyBest = sellPrices.length ? Math.min(...sellPrices) : sellSide.minPrice; // comprar = menor SELL
+        const sellBest = buyPrices.length ? Math.max(...buyPrices) : buySide.maxPrice;  // vender  = mayor BUY
+
+        return {
+            ok: true as const,
+            ts: Date.now(),
+            pair: "USDT/VES",
+
+            // BUY = tú compras USDT => lado SELL
+            buy: {
+                best: buyBest,
+                avg: mean(sellPrices),
+                median: median(sellPrices),
+                samples: sellPrices.length,
+
+                // ✅ extremos del lado SELL
+                minOrder: compactOrder(sellSide.minItem), // menor precio (mejor para comprar)
+                maxOrder: compactOrder(sellSide.maxItem), // mayor precio dentro de SELL
+            },
+
+            // SELL = tú vendes USDT => lado BUY
+            sell: {
+                best: sellBest,
+                avg: mean(buyPrices),
+                median: median(buyPrices),
+                samples: buyPrices.length,
+
+                // ✅ extremos del lado BUY
+                minOrder: compactOrder(buySide.minItem), // menor precio dentro de BUY
+                maxOrder: compactOrder(buySide.maxItem), // mayor precio (mejor para vender)
+            },
+
+            spread: buyBest !== null && sellBest !== null ? sellBest - buyBest : null,
+        };
+    } catch (e: any) {
+        console.log("GET P2P MARKET ERR:", e?.response?.status, e?.response?.data);
+        return {
+            ok: false as const,
+            status: e?.response?.status,
+            data: e?.response?.data,
+            message: e?.message,
+        };
+    }
+}

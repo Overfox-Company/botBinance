@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 
 
 
+import { Delete01Icon } from '@hugeicons-pro/core-solid-standard';
 import { CancelCircleIcon } from '@hugeicons-pro/core-stroke-standard';
 import { HugeiconsIcon } from '@hugeicons/react';
 
@@ -77,6 +78,7 @@ export function AdStatusCell({ ad }: { ad: Ad }) {
 
             {/* Switch 1 <-> 3 */}
             <Switch
+                className="cursor-pointer"
                 checked={isOnline}
                 onCheckedChange={toggleOnlineOffline}
                 disabled={isPending || isClosed}
@@ -90,15 +92,15 @@ export function AdStatusCell({ ad }: { ad: Ad }) {
                 size="icon"
                 onClick={closeAd}
                 disabled={isPending || isClosed}
-                className="h-9 w-9"
+                className="h-9 w-9 cursor-pointer"
                 aria-label="Close ad"
                 title="Close ad"
             >
                 <HugeiconsIcon
-                    icon={CancelCircleIcon}
-                    size={40}
-                    color="#020617"
-                    strokeWidth={1.5}
+                    icon={Delete01Icon}
+                    size={48}
+                    color="#ec1818"
+                    strokeWidth={1}
                 />
             </Button>
         </div>
