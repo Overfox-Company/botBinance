@@ -62,16 +62,14 @@ export default async function MarketBanner() {
                     </div>
                     <Badge variant="destructive">Error</Badge>
                 </div>
-
+                {/*
                 <pre className="mt-3 text-xs overflow-auto opacity-80">
                     {JSON.stringify(m, null, 2)}
-                </pre>
+                </pre>*/}
             </section>
         );
     }
 
-    const spreadPct =
-        m.buy.best && m.sell.best ? ((m.sell.best - m.buy.best) / m.buy.best) * 100 : null;
 
     return (
         <section className="rounded-lg border p-4 bg-muted/20 space-y-3">

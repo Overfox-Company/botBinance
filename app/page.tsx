@@ -53,7 +53,7 @@ function validateNumber(raw: string) {
 
 export default async function Home() {
   const data = await GetAdversitingList();
-
+  console.log("DATA ADS:", data);
   // Soporta varios shapes comunes: array directo o data/items
   const ads: TypeBinanceAd[] = Array.isArray(data)
     ? (data as TypeBinanceAd[])
