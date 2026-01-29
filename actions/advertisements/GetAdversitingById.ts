@@ -13,7 +13,7 @@ export async function GetAdvertisementById(advNo: string, req?: Request) {
         });
 
         // r.data suele ser { code, message, data }
-        console.log("Advertisement data received:", r.data);
+        //  console.log("Advertisement data received:", r.data);
         return r.data;
     } catch (e) {
         console.log(e);

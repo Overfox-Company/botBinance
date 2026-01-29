@@ -20,7 +20,7 @@ export async function GetAdversitingList(req?: Request) {
         });
         return r.data;
     } catch (e) {
-        console.log(e);
+        //  console.log(e);
         return null;
     }
 };

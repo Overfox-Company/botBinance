@@ -156,7 +156,7 @@ export async function GetP2PMarket() {
             pcntSpread: buyAvg !== null && sellAvg !== null ? ((sellAvg - buyAvg) / buyAvg) * 100 : null,
         };
     } catch (e: any) {
-        console.log("GET P2P MARKET ERR:", e?.response?.status, e?.response?.data);
+        //     console.log("GET P2P MARKET ERR:", e?.response?.status, e?.response?.data);
         return {
             ok: false as const,
             status: e?.response?.status,
