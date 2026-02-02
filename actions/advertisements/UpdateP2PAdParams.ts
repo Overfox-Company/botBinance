@@ -54,9 +54,9 @@ export async function UpdateP2PAdParams(input: UpdateP2PAdParamsInput) {
 
         return r.data;
     } catch (e: any) {
-        console.log("STATUS:", e?.response?.status);
-        console.log("DATA:", e?.response?.data);
-        console.log("UPDATE ERR:", e?.response?.status, e?.response?.data);
+        // console.log("STATUS:", e?.response?.status);
+        //  console.log("DATA:", e?.response?.data);
+        //  console.log("UPDATE ERR:", e?.response?.status, e?.response?.data);
         return null;
     }
 }

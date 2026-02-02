@@ -12,9 +12,9 @@ export async function UpdateP2PAdStatus(body: { advNos: string[]; advStatus: num
         return r.data;
     }
     catch (e: any) {
-        console.log("STATUS:", e?.response?.status);
-        console.log("DATA:", e?.response?.data);
-        console.log("HEADERS:", e?.response?.headers);
+        //  console.log("STATUS:", e?.response?.status);
+        //  console.log("DATA:", e?.response?.data);
+        //    console.log("HEADERS:", e?.response?.headers);
         return null;
     }
 

@@ -8,9 +8,9 @@ export function AutoRefresh({ everyMs = 5000 }: { everyMs?: number }) {
 
     useEffect(() => {
         const id = setInterval(() => {
-            console.log("AutoRefresh: refreshing SSR...");
-            console.log("apiKey:", process.env.BINANCE_API_KEY)
-            console.log("apiSecret:", process.env.BINANCE_API_SECRET)
+            // console.log("AutoRefresh: refreshing SSR...");
+            //   console.log("apiKey:", process.env.BINANCE_API_KEY)
+            //    console.log("apiSecret:", process.env.BINANCE_API_SECRET)
             router.refresh(); // ✅ vuelve a ejecutar el SSR
         }, everyMs);
 

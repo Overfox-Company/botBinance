@@ -101,7 +101,7 @@ export function EditableNumberCell({
             payload[field] = normalized;
 
             const r = await UpdateP2PAdParams(payload);
-            console.log("UPDATE RESULT:", r);
+            //    console.log("UPDATE RESULT:", r);
             if (!r) {
                 setError("No se pudo guardar");
                 return;

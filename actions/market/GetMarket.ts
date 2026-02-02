@@ -42,7 +42,7 @@ async function fetchMarketSide(tradeType: TradeType, rows = 20, page = 1) {
         body,
 
     );
-    console.log("FETCH MARKET SIDE:", tradeType, r.data);
+    // console.log("FETCH MARKET SIDE:", tradeType, r.data);
     const items = Array.isArray(r.data?.data) ? r.data.data : [];
     const prices = items
         .map((it: any) => toNum(it?.adv?.price)) // en este endpoint suele venir en it.adv.price
