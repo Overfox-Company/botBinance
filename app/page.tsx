@@ -18,6 +18,9 @@ import { AdStatusCell } from "@/components/AdsStatusComponent";
 import { EditableNumberCell } from "@/components/editable-cell";
 import { UpdateP2PAdParams } from "@/actions/advertisements/UpdateP2PAdParams"; // ajusta ruta real
 import MarketBanner from "@/components/MarketBanner";
+import BotConfig from "@/components/Configuration";
+import { GetP2PMarket } from "@/actions/market/GetMarket";
+import { GetBotConfig } from "@/actions/config/GetConfigUser";
 
 // components/ads/status-badge.tsx
 
@@ -38,17 +41,6 @@ function formatDate(ms: number) {
     timeStyle: "short",
   }).format(new Date(ms));
 }
-function toNumberString(raw: string) {
-  // quita separadores y espacios, deja punto decimal
-  return raw.replace(/\s/g, "").replace(/\./g, "").replace(/,/g, ".");
-}
-
-function validateNumber(raw: string) {
-  const n = Number(raw);
-  if (!raw || Number.isNaN(n)) return "Número inválido";
-  if (n < 0) return "No puede ser negativo";
-  return null;
-}
 
 
 export default async function Home() {
@@ -63,6 +55,9 @@ export default async function Home() {
         ? ((data as any).items as TypeBinanceAd[])
         : (data?.advNo ? [data as TypeBinanceAd] : []);
 
+  const m = await GetP2PMarket();
+  const config = await GetBotConfig();
+  //console.log("CONFIG BOT:", config);
   return (
     <main className="mx-auto w-full max-w-8xl p-12 space-y-4">
       <div className="space-y-1">
@@ -71,7 +66,23 @@ export default async function Home() {
           Vista del mercado actual
         </p>
       </div>
-      <MarketBanner />
+      <main className="mx-auto w-full max-w-8xl">
+        <div className="grid grid-cols-12 gap-4 items-start">
+          {/* 8 columnas: Config */}
+          <div className="col-span-12 lg:col-span-8 h-full">
+            <BotConfig
+              config={config.ok ? config.data : null}
+              marketBuyAvg={m?.ok ? m.buy.avg : null}
+              marketSellAvg={m?.ok ? m.sell.avg : null}
+            />
+          </div>
+
+          {/* 4 columnas: Mercado */}
+          <div className="col-span-12 lg:col-span-4">
+            <MarketBanner />
+          </div>
+        </div>
+      </main>
       {/* tu tabla */}
 
       <header className="flex items-end justify-between gap-4">
