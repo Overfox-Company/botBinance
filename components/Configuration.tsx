@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { PatchBotConfig } from "@/actions/config/PatchConfigUser"
-
+import { useEffect } from "react";
 type SideMode = "above" | "below";
 
 function toNumberOrNull(v: string) {
@@ -61,6 +61,29 @@ export default function BotConfig({ config = null, marketBuyAvg = null, marketSe
 
         setSaving(false);
     }
+    const onEdit = () => {
+        setSaving(true);
+
+        PatchBotConfig({
+            buy: { mode: buyMode, offset: buyOffset ?? 0 },
+            sell: { mode: sellMode, offset: sellOffset ?? 0 },
+        }).then((res: any) => {
+            if (!res.ok) {
+                alert("Error al guardar configuración: " + res.message);
+                console.log("EDIT ERR:", res.message);
+            }
+            setSaving(false);
+        });
+    };
+
+    useEffect(() => {
+        const timeoutId = setTimeout(() => {
+            onEdit();
+        }, 1000);
+        return () => {
+            clearTimeout(timeoutId);
+        };
+    }, [buyMode, sellMode, buyOffsetRaw, sellOffsetRaw]);
     return (
         <Card className="p-4 space-y-4 h-full">
             <div className="flex items-start justify-between gap-4">
@@ -121,8 +144,8 @@ export default function BotConfig({ config = null, marketBuyAvg = null, marketSe
                     </div>
 
                     <div className="text-xs text-muted-foreground">
-                        Mercado: <span className="font-medium">{marketBuyAvg ?? "—"}</span> → Objetivo:{" "}
-                        <span className="font-medium">{buyTarget ?? "—"}</span>
+                        Mercado: <span className="font-medium">{marketBuyAvg?.toFixed(2) ?? "—"}</span> → Objetivo:{" "}
+                        <span className="font-medium">{buyTarget?.toFixed(2) ?? "—"}</span>
                     </div>
                 </div>
 
@@ -161,8 +184,8 @@ export default function BotConfig({ config = null, marketBuyAvg = null, marketSe
                     </div>
 
                     <div className="text-xs text-muted-foreground">
-                        Mercado: <span className="font-medium">{marketSellAvg ?? "—"}</span> → Objetivo:{" "}
-                        <span className="font-medium">{sellTarget ?? "—"}</span>
+                        Mercado: <span className="font-medium">{marketSellAvg?.toFixed(2) ?? "—"}</span> → Objetivo:{" "}
+                        <span className="font-medium">{sellTarget?.toFixed(2) ?? "—"}</span>
                     </div>
                 </div>
             </div>

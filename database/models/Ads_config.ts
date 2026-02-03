@@ -1,4 +1,4 @@
-import "server-only";
+
 import mongoose, { Schema } from "mongoose";
 
 type OffsetMode = "above" | "below";

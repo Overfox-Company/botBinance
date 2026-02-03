@@ -69,7 +69,7 @@ export default async function Home() {
       <main className="mx-auto w-full max-w-8xl">
         <div className="grid grid-cols-12 gap-4 items-start">
           {/* 8 columnas: Config */}
-          <div className="col-span-12 lg:col-span-8 h-full">
+          <div className="col-span-12 lg:col-span-7 h-full">
             <BotConfig
               config={config.ok ? config.data : null}
               marketBuyAvg={m?.ok ? m.buy.avg : null}
@@ -78,7 +78,7 @@ export default async function Home() {
           </div>
 
           {/* 4 columnas: Mercado */}
-          <div className="col-span-12 lg:col-span-4">
+          <div className="col-span-12 lg:col-span-5">
             <MarketBanner />
           </div>
         </div>
