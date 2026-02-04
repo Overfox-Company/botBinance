@@ -42,7 +42,7 @@ export function SpreadPercent({ value }: SpreadPercentProps) {
 
 export default async function MarketBanner() {
     const m = await GetP2PMarket();
-    const refresh = <AutoRefresh everyMs={10000} />;
+    const refresh = <AutoRefresh everyMs={process.env.TIME_TO_REFRESH ? Number(process.env.TIME_TO_REFRESH) : 15000} />;
 
     if (!m?.ok) {
         return (
@@ -60,7 +60,7 @@ export default async function MarketBanner() {
     }
 
     return (
-        <section className="rounded-lg border p-4 bg-muted/20 space-y-3">
+        <section className="rounded-lg border p-4 bg-muted/20 space-y-3 h-full">
             {refresh}
 
             <div className="flex items-start justify-between gap-3">

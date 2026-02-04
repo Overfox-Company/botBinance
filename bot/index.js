@@ -4,11 +4,12 @@ import "dotenv/config";
 import { createLoop } from "./loop.js";
 import UpdateAds from "./functions/UpdateAds.js";
 import { connectDB } from "../database/utils/MongoDB.ts";
+import { getP2PMarket } from "./functions/GetPriceMarket.js";
 
 const app = express();
 const loop = createLoop({
     enabled: true,
-    intervalMs: 3000,
+    intervalMs: Number(process.env.TIME_TO_REFRESH) || 15000,
     task: async () => {
         await UpdateAds()
     }
@@ -51,7 +52,10 @@ app.get("/stop-loop", (req, res) => {
     loop.stop();
     res.send("Loop stopped");
 });
-
+app.get("/market", async (req, res) => {
+    const result = await getP2PMarket();
+    res.send(result);
+});
 
 app.listen(PORT, () => {
     console.log(`[BOT] listening on http://localhost:${PORT}`);

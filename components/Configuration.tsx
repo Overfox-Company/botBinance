@@ -8,8 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
-import { PatchBotConfig } from "@/actions/config/PatchConfigUser"
+import { PatchBotConfig } from "@/actions/config/PatchConfigUser";
 import { useEffect } from "react";
+
 type SideMode = "above" | "below";
 
 function toNumberOrNull(v: string) {
@@ -20,6 +21,12 @@ function toNumberOrNull(v: string) {
 function computeTarget(market: number | null, offset: number | null, mode: SideMode) {
     if (market === null || offset === null) return null;
     return mode === "above" ? market + offset : market - offset;
+}
+
+function computeProfitPct(buyTarget: number | null, sellTarget: number | null) {
+    if (buyTarget === null || sellTarget === null) return null;
+    if (buyTarget <= 0) return null; // evita división rara
+    return ((sellTarget - buyTarget) / buyTarget) * 100;
 }
 
 type Props = {
@@ -45,22 +52,44 @@ export default function BotConfig({ config = null, marketBuyAvg = null, marketSe
 
     const buyTarget = computeTarget(marketBuyAvg, buyOffset, buyMode);
     const sellTarget = computeTarget(marketSellAvg, sellOffset, sellMode);
+
+    const profitPct = computeProfitPct(buyTarget, sellTarget);
+
+    const profitColor =
+        profitPct === null
+            ? "text-muted-foreground"
+            : profitPct >= 0
+                ? "text-emerald-600"
+                : "text-red-600";
+
+    const profitBg =
+        profitPct === null
+            ? "bg-muted/20"
+            : profitPct >= 0
+                ? "bg-emerald-500/10 border-emerald-500/20"
+                : "bg-red-500/10 border-red-500/20";
+
+    const profitLabel =
+        profitPct === null
+            ? "—"
+            : `${profitPct >= 0 ? "+" : ""}${profitPct.toFixed(2)}%`;
+
     const [saving, setSaving] = React.useState(false);
+
     async function onToggle(next: boolean) {
-        // ✅ UI optimista
         setEnabled(next);
         setSaving(true);
 
         const res: any = await PatchBotConfig({ enabled: next });
 
         if (!res.ok) {
-            // 🔁 rollback si falla
             setEnabled((prev) => !prev);
             console.log("ENABLE ERR:", res.message);
         }
 
         setSaving(false);
     }
+
     const onEdit = () => {
         setSaving(true);
 
@@ -80,10 +109,9 @@ export default function BotConfig({ config = null, marketBuyAvg = null, marketSe
         const timeoutId = setTimeout(() => {
             onEdit();
         }, 1000);
-        return () => {
-            clearTimeout(timeoutId);
-        };
+        return () => clearTimeout(timeoutId);
     }, [buyMode, sellMode, buyOffsetRaw, sellOffsetRaw]);
+
     return (
         <Card className="p-4 space-y-4 h-full">
             <div className="flex items-start justify-between gap-4">
@@ -95,14 +123,28 @@ export default function BotConfig({ config = null, marketBuyAvg = null, marketSe
                 </div>
 
                 <div className="flex items-center gap-3">
-                    <Badge variant={enabled ? "default" : "secondary"}>
-                        {enabled ? "Activo" : "Inactivo"}
-                    </Badge>
+                    <Badge variant={enabled ? "default" : "secondary"}>{enabled ? "Activo" : "Inactivo"}</Badge>
 
                     <div className="flex items-center gap-2">
                         <Label className="text-xs text-muted-foreground">Bot</Label>
                         <Switch checked={enabled} onCheckedChange={onToggle} disabled={saving} />
                     </div>
+                </div>
+            </div>
+
+            {/* ✅ Mini banner de ganancia */}
+            <div className={`rounded-md border p-3 ${profitBg}`}>
+                <div className="flex items-center justify-between gap-3">
+                    <div className="text-sm font-medium">Ganancia estimada</div>
+
+                    <div className={`text-sm font-semibold ${profitColor}`}>
+                        {profitLabel}
+                    </div>
+                </div>
+
+                <div className="mt-1 text-xs text-muted-foreground">
+                    Compra objetivo: <span className="font-medium">{buyTarget?.toFixed(2) ?? "—"}</span>{" "}
+                    • Venta objetivo: <span className="font-medium">{sellTarget?.toFixed(2) ?? "—"}</span>
                 </div>
             </div>
 

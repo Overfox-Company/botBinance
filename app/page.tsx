@@ -78,7 +78,7 @@ export default async function Home() {
           </div>
 
           {/* 4 columnas: Mercado */}
-          <div className="col-span-12 lg:col-span-5">
+          <div className="col-span-12 lg:col-span-5 h-full">
             <MarketBanner />
           </div>
         </div>
