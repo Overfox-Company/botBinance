@@ -113,7 +113,7 @@ export default function BotConfig({ config = null, marketBuyAvg = null, marketSe
     }, [buyMode, sellMode, buyOffsetRaw, sellOffsetRaw]);
 
     return (
-        <Card className="p-4 space-y-4 h-full">
+        <Card className="p-4 space-y-4 h-full bg-muted/20">
             <div className="flex items-start justify-between gap-4">
                 <div className="space-y-1">
                     <div className="text-lg font-semibold">Configuración</div>
