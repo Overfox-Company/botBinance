@@ -44,20 +44,28 @@ function formatDate(ms: number) {
 
 
 export default async function Home() {
-  const data = await GetAdversitingList();
+  const adsResponse = await GetAdversitingList();
+  const { buy, sell } = adsResponse ?? { buy: null, sell: null };
   //console.log("DATA ADS:", data);
   // Soporta varios shapes comunes: array directo o data/items
-  const ads: TypeBinanceAd[] = Array.isArray(data)
-    ? (data as TypeBinanceAd[])
-    : Array.isArray((data as any)?.data)
-      ? ((data as any).data as TypeBinanceAd[])
-      : Array.isArray((data as any)?.items)
-        ? ((data as any).items as TypeBinanceAd[])
-        : (data?.advNo ? [data as TypeBinanceAd] : []);
+  const adsBuy: TypeBinanceAd[] = Array.isArray(buy)
+    ? (buy as TypeBinanceAd[])
+    : Array.isArray((buy as any)?.data)
+      ? ((buy as any).data as TypeBinanceAd[])
+      : Array.isArray((buy as any)?.items)
+        ? ((buy as any).items as TypeBinanceAd[])
+        : (buy?.advNo ? [buy as TypeBinanceAd] : []);
 
   const m = await GetP2PMarket();
   const config = await GetBotConfig();
   //console.log("CONFIG BOT:", config);
+  const adsSell: TypeBinanceAd[] = Array.isArray(sell)
+    ? (sell as TypeBinanceAd[])
+    : Array.isArray((sell as any)?.data)
+      ? ((sell as any).data as TypeBinanceAd[])
+      : Array.isArray((sell as any)?.items)
+        ? ((sell as any).items as TypeBinanceAd[])
+        : (sell?.advNo ? [sell as TypeBinanceAd] : []);
   return (
     <main className="mx-auto w-full max-w-8xl p-12 space-y-4">
       <div className="space-y-1">
@@ -93,10 +101,12 @@ export default async function Home() {
           </p>
         </div>
 
-        <Badge variant="secondary" style={{ borderRadius: 8 }}>{ads.length} anuncios</Badge>
+        <Badge variant="secondary" style={{ borderRadius: 8 }}>{adsBuy.length} anuncios</Badge>
       </header>
       <br />
-      <div className="rounded-lg border">
+      <div className="rounded-lg">
+        <span className="font-semibold"> Anuncios de compra </span>
+        <br />       <br />
         <Table>
           <TableHeader className='bg-muted/60'>
             <TableRow>
@@ -118,7 +128,7 @@ export default async function Home() {
 
 
           <TableBody className='bg-muted/40'>
-            {ads.map((ad) => {
+            {adsBuy.map((ad) => {
               const fiat = ad.fiatSymbol ?? ad.fiatUnit;
 
               return (
@@ -150,10 +160,10 @@ export default async function Home() {
                     <div className="font-medium">
                       <EditableNumberCell
                         advNo={String(ad.advNo)}
-                        field="initAmount"
+                        field="surplusAmount"
                         // si tu response trae initAmount úsalo; si no, como fallback toma surplusAmount
-                        raw={String((ad as any).initAmount ?? ad.surplusAmount)}
-                        display={`${formatNumberLike(ad.initAmount ?? ad.surplusAmount, 2)} ${ad.asset}`}
+                        raw={String(ad.surplusAmount)}
+                        display={`${formatNumberLike(ad.surplusAmount, 2)} ${ad.asset}`}
                         inputClassName="w-[160px]"
                         min={0}
                       />
@@ -235,10 +245,154 @@ export default async function Home() {
               );
             })}
 
-            {ads.length === 0 ? (
+            {adsBuy.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={8} className="py-10 text-center text-sm text-muted-foreground">
-                  No hay anuncios para mostrar.
+                  No hay anuncios de compra para mostrar.
+                </TableCell>
+              </TableRow>
+            ) : null}
+          </TableBody>
+        </Table>
+        <br />       <br />
+        <span className="font-semibold"> Anuncios de venta </span>
+        <br />       <br />
+        <Table>
+          <TableHeader className='bg-muted/60'>
+            <TableRow>
+              <TableHead className="w-[92px]">Tipo</TableHead>
+              <TableHead>Par</TableHead>
+              <TableHead className="w-[160px]">Precio</TableHead>
+              <TableHead className=" w-[180px]">Disponible</TableHead>
+              <TableHead className=" w-[260px]">Límites</TableHead>
+              <TableHead>Métodos</TableHead>
+
+              {/* NUEVAS */}
+              <TableHead>Publicado</TableHead>
+              <TableHead>Actualizado</TableHead>
+
+              <TableHead className="w-[120px]">Estado</TableHead>
+              <TableHead className="w-[140px] ">Acción</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody className='bg-muted/40'>
+            {adsSell.map((ad) => {
+              const fiat = ad.fiatSymbol ?? ad.fiatUnit;
+
+              return (
+                <TableRow key={ad.advNo}>
+                  <TableCell>
+                    <Badge variant={ad.tradeType === "BUY" ? "default" : "destructive"}>
+                      {ad.tradeType}
+                    </Badge>
+                  </TableCell>
+
+                  <TableCell className="font-medium">
+                    {ad.asset} / {ad.fiatUnit}
+                    <div className="text-xs text-muted-foreground">ID {ad.advNo}</div>
+                  </TableCell>
+
+                  <TableCell className=" font-semibold">
+                    <EditableNumberCell
+                      advNo={String(ad.advNo)}
+                      field="price"
+                      raw={String(ad.price)}
+                      display={`${fiat} ${formatNumberLike(ad.price, 3)}`}
+                      inputClassName="w-[140px] text-right"
+                      min={0}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <div className="font-medium">
+                      <EditableNumberCell
+                        advNo={String(ad.advNo)}
+                        field="surplusAmount"
+                        // si tu response trae initAmount úsalo; si no, como fallback toma surplusAmount
+                        raw={String(ad.surplusAmount)}
+                        display={`${formatNumberLike(ad.surplusAmount, 2)} ${ad.asset}`}
+                        inputClassName="w-[160px]"
+                        min={0}
+                      />
+                    </div>
+
+                    {                 /*   <div className="text-xs text-muted-foreground">
+                      pago en {ad.payTimeLimit} min
+                    </div>*/}
+                  </TableCell>
+                  <TableCell>
+                    <div className="text-sm flex items-center justify-start gap-2">
+                      <span>{fiat}</span>
+
+                      {/* MIN */}
+                      <EditableNumberCell
+                        advNo={String(ad.advNo)}
+                        field="minSingleTransAmount"
+                        raw={String(ad.minSingleTransAmount)}
+                        display={formatNumberLike(ad.minSingleTransAmount, 0)}
+                        inputClassName="w-[120px]"
+                        min={0}
+                        // opcional: para evitar que pongan min > max
+                        max={Number(ad.maxSingleTransAmount)}
+                      />
+
+                      <span className="text-muted-foreground">—</span>
+
+                      <span>{fiat}</span>
+
+                      {/* MAX */}
+                      <EditableNumberCell
+                        advNo={String(ad.advNo)}
+                        field="maxSingleTransAmount"
+                        raw={String(ad.maxSingleTransAmount)}
+                        display={formatNumberLike(ad.maxSingleTransAmount, 0)}
+                        inputClassName="w-[140px]"
+                        min={Number(ad.minSingleTransAmount)}
+                      />
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex flex-wrap gap-1">
+                      {(ad.tradeMethods ?? []).slice(0, 3).map((m) => (
+                        <Badge key={m.identifier} variant="outline">
+                          {m.tradeMethodName}
+                        </Badge>
+                      ))}
+                      {(ad.tradeMethods ?? []).length > 3 ? (
+                        <Badge variant="secondary">+{(ad.tradeMethods ?? []).length - 3}</Badge>
+                      ) : null}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="text-sm">
+                      {formatDate(ad.createTime)}
+                    </div>
+                  </TableCell>
+
+                  <TableCell>
+                    <div className="text-sm">
+                      {formatDate(ad.advUpdateTime)}
+                    </div>
+                  </TableCell>
+
+                  <TableCell>
+                    <AdStatusCell ad={ad as { advNo: string; advStatus: 1 | 3 | 4 }} />
+                  </TableCell>
+
+                  <TableCell className="text-right">
+                    {/* Ruta de detalle: tú decides el path */}
+                    <Button asChild size="lg" className="font-semibold">
+                      <Link href={`/ads/${ad.advNo}`}>Ver detalle</Link>
+                    </Button>
+
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+
+            {adsSell.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={8} className="py-10 text-center text-sm text-muted-foreground">
+                  No hay anuncios de venta para mostrar.
                 </TableCell>
               </TableRow>
             ) : null}

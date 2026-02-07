@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import { UpdateP2PAdParams } from "@/actions/advertisements/UpdateP2PAdParams";
 import { useRouter } from "next/navigation";
 
-type Field = "price" | "initAmount" | "minSingleTransAmount" | "maxSingleTransAmount";
+type Field = "price" | "initAmount" | "minSingleTransAmount" | "maxSingleTransAmount" | "surplusAmount";
 
 type Props = {
     advNo: string;
@@ -99,9 +99,9 @@ export function EditableNumberCell({
         startTransition(async () => {
             const payload: any = { advNo };
             payload[field] = normalized;
-
+            console.log("UPDATING:", payload);
             const r = await UpdateP2PAdParams(payload);
-            //    console.log("UPDATE RESULT:", r);
+            console.log("UPDATE RESULT:", r);
             if (!r) {
                 setError("No se pudo guardar");
                 return;
