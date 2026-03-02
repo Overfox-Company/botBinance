@@ -21,10 +21,11 @@ import MarketBanner from "@/components/MarketBanner";
 import BotConfig from "@/components/Configuration";
 import { GetP2PMarket } from "@/actions/market/GetMarket";
 import { GetBotConfig } from "@/actions/config/GetConfigUser";
+import { TransactionHistoryIcon } from '@hugeicons-pro/core-stroke-rounded';
 
 // components/ads/status-badge.tsx
 
-
+export const dynamic = "force-dynamic";
 
 function formatNumberLike(value: string, decimals = 0) {
   const n = Number(value);
@@ -99,6 +100,35 @@ export default async function Home() {
           <p className="text-sm text-muted-foreground">
             Vista resumida tipo tabla (similar a Binance).
           </p>
+          <Button
+            asChild
+            size="sm"
+            variant="ghost"
+            className="bg-transparent hover:bg-transparent px-0"
+          >
+            <Link
+              href={`/ads/history`}
+              className="flex
+               items-center 
+               gap-2
+              text-primary
+               underline 
+               underline-offset-4 
+               decoration-dotted 
+               hover:opacity-80
+               p-0
+               "
+            >
+              Ver transacciones
+              <HugeiconsIcon
+                icon={TransactionHistoryIcon}
+                size={20}
+                color="currentColor"
+                strokeWidth={1.5}
+              />
+            </Link>
+          </Button>
+
         </div>
 
         <Badge variant="secondary" style={{ borderRadius: 8 }}>{adsBuy.length} anuncios</Badge>
