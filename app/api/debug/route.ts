@@ -10,16 +10,11 @@ export async function GET() {
         const DAYS_30 = 30 * 24 * 60 * 60 * 1000;
 
         const r = await client.request({
-            method: "GET",
-            url: "/sapi/v1/c2c/orderMatch/listUserOrderHistory",
+            method: "POST",
+            url: "/sapi/v1/c2c/orderMatch/getUserOrderDetail",
             params: {
-                asset: "USDT",
-                fiat: "VES",
-                // tradeType: "BUY", // opcional
-                startTime: now - DAYS_30,
-                endTime: now,
-                page: 1,
-                rows: 100,
+                adOrderNo: "22860114003455488000"
+
             },
             signed: true,
         });
