@@ -1,7 +1,8 @@
-import client from "@/utils/binance";
+import { getUserClient } from "@/utils/binance";
 
 export async function GetAdvertisementById(advNo: string, req?: Request) {
     try {
+        const client = await getUserClient();
         console.log("Fetching advertisement with ID:", advNo);
         const r = await client.request({
             method: "POST",

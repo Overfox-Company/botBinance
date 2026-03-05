@@ -5,7 +5,7 @@ import { createLoop } from "./loop.js";
 import UpdateAds from "./functions/UpdateAds.js";
 import { connectDB } from "../database/utils/MongoDB.ts";
 import { getP2PMarket } from "./functions/GetPriceMarket.js";
-
+import { startNextServer } from "./nextManager.js";
 const app = express();
 const loop = createLoop({
     enabled: true,
@@ -14,6 +14,7 @@ const loop = createLoop({
         await UpdateAds()
     }
 })
+await startNextServer()
 await connectDB()
 // Middlewares básicos
 app.use(cors());

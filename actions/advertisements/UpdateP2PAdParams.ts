@@ -1,6 +1,7 @@
 "use server";
 
-import client from "@/utils/binance";
+import { getUserClient } from "@/utils/binance";
+
 
 type AdvStatus = 1 | 3 | 4;
 
@@ -32,7 +33,7 @@ function onlyDefined<T extends Record<string, any>>(obj: T) {
 export async function UpdateP2PAdParams(input: UpdateP2PAdParamsInput) {
     try {
         if (!input?.advNo) throw new Error("advNo es obligatorio");
-
+        const client = await getUserClient();
         // Binance suele aceptar strings numéricos; convertimos por seguridad
         const payload = onlyDefined({
             advNo: String(input.advNo),

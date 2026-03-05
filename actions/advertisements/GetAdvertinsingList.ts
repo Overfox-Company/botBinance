@@ -1,6 +1,8 @@
 "use server";
 
-import client from "@/utils/binance";
+import { getUserClient } from "@/utils/binance";
+
+
 const bodyBuy = {
     "asset": "USDT",
     "fiatUnit": "VES",
@@ -18,14 +20,14 @@ const bodySell = {
 }
 export async function GetAdversitingList(req?: Request) {
     try {
-
+        const client = await getUserClient();
         const rBuy = await client.request({
             method: "POST",
             url: "/sapi/v1/c2c/ads/listWithPagination",
             data: bodyBuy,
             signed: true,
         });
-const rSell = await client.request({
+        const rSell = await client.request({
             method: "POST",
             url: "/sapi/v1/c2c/ads/listWithPagination",
             data: bodySell,

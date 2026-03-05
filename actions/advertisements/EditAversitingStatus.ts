@@ -1,8 +1,10 @@
 'use server'
-import client from "@/utils/binance";
+
+import { getUserClient } from "@/utils/binance";
 
 export async function UpdateP2PAdStatus(body: { advNos: string[]; advStatus: number }) {
     try {
+        const client = await getUserClient();
         const r = await client.request({
             method: "POST",
             url: "/sapi/v1/c2c/ads/updateStatus",

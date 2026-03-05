@@ -1,5 +1,4 @@
 "use client";
-
 import * as React from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +9,11 @@ import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { PatchBotConfig } from "@/actions/config/PatchConfigUser";
 import { useEffect } from "react";
+import { ValidateBinanceCredentials } from "@/actions/validateCredentials/ValidateCredentials";
+import { useRouter } from "next/navigation";
+import { HugeiconsIcon } from '@hugeicons/react';
+import { CheckmarkCircle01Icon } from '@hugeicons-pro/core-solid-rounded';
+import { CancelCircleIcon } from '@hugeicons-pro/core-solid-rounded';
 
 type SideMode = "above" | "below";
 
@@ -38,8 +42,20 @@ type Props = {
     marketBuyAvg?: number | null;
     marketSellAvg?: number | null;
 };
-
+function getCookie(name: string) {
+    const match = document.cookie.match(
+        new RegExp("(^| )" + name + "=([^;]+)")
+    );
+    return match ? decodeURIComponent(match[2]) : null;
+}
 export default function BotConfig({ config = null, marketBuyAvg = null, marketSellAvg = null }: Props) {
+
+    const [apiKey, setApiKey] = React.useState("");
+    const [apiSecret, setApiSecret] = React.useState("");
+    const [validating, setValidating] = React.useState(false);
+    const [credentialsValid, setCredentialsValid] = React.useState<boolean | null>(null);
+
+
     const [enabled, setEnabled] = React.useState(config?.enabled ?? false);
 
     const [buyMode, setBuyMode] = React.useState<SideMode>(config?.buy.mode ?? "above");
@@ -104,16 +120,85 @@ export default function BotConfig({ config = null, marketBuyAvg = null, marketSe
             setSaving(false);
         });
     };
+    useEffect(() => {
+        const storedKey = getCookie("binance_api_key");
+        const storedSecret = getCookie("binance_secret");
 
+        if (storedKey && storedSecret) {
+            setApiKey(storedKey);
+            setApiSecret(storedSecret);
+            setCredentialsValid(true);
+        }
+    }, []);
     useEffect(() => {
         const timeoutId = setTimeout(() => {
             onEdit();
         }, 1000);
         return () => clearTimeout(timeoutId);
     }, [buyMode, sellMode, buyOffsetRaw, sellOffsetRaw]);
+    const router = useRouter();
+    async function validateCredentials() {
+        setValidating(true);
 
+        const res: any = await ValidateBinanceCredentials(apiKey, apiSecret);
+
+        if (!res.ok) {
+            alert(res.message);
+            setCredentialsValid(false);
+        } else {
+            setCredentialsValid(true);
+
+
+            localStorage.setItem(
+                "binance_credentials",
+                JSON.stringify({ apiKey, apiSecret })
+            );
+
+
+        }
+
+        setValidating(false);
+        router.refresh();
+    }
     return (
         <Card className="p-4 space-y-4 h-full bg-muted/20">
+            <div className="space-y-3">
+                <div className="text-lg font-semibold">Credenciales Binance</div>
+
+                <div className="flex  gap-2 items-center justify-start">
+                    <Input
+
+                        placeholder="API Key"
+                        value={apiKey}
+                        onChange={(e) => setApiKey(e.target.value)}
+                    />
+
+                    <Input
+
+                        placeholder="API Secret"
+                        type="password"
+                        value={apiSecret}
+                        onChange={(e) => setApiSecret(e.target.value)}
+                    />
+
+                    <Button onClick={validateCredentials} disabled={validating}>
+                        Validar
+                    </Button>
+
+                    {credentialsValid === true && (
+                        <div
+                            style={{ width: "12px ", height: "12px", backgroundColor: "rgb(34, 197, 94)", borderRadius: "50px" }}
+
+                        />
+                    )}
+
+                    {credentialsValid === false && (
+                        <div
+                            style={{ width: "12px", height: "12px", backgroundColor: "rgb(220, 38, 38)", borderRadius: "50px" }}
+                        />
+                    )}
+                </div>
+            </div>
             <div className="flex items-start justify-between gap-4">
                 <div className="space-y-1">
                     <div className="text-lg font-semibold">Configuración</div>

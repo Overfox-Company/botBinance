@@ -62,7 +62,7 @@ export default function TransactionsTable({ initialData }: Props) {
             });
 
             if (res?.ok) {
-                let result = res.data?.data ?? [];
+                let result = res.data ?? [];
 
                 // Filtro local (search)
                 if (search) {
@@ -327,7 +327,7 @@ export default function TransactionsTable({ initialData }: Props) {
                 <div className="flex items-center gap-4">
 
                     {/* Trade Type */}
-                    <Select onValueChange={(v) => setTradeType(v as "BUY" | "SELL")}>
+                    <Select onValueChange={(v: any) => setTradeType(v as "BUY" | "SELL")}>
                         <SelectTrigger className="w-[120px]">
                             <SelectValue placeholder="Tipo" />
                         </SelectTrigger>
@@ -338,7 +338,7 @@ export default function TransactionsTable({ initialData }: Props) {
                     </Select>
 
                     {/* Status */}
-                    <Select onValueChange={(v) => setStatus(v === "ALL" ? undefined : v)}>
+                    <Select onValueChange={(v: any) => setStatus(v === "ALL" ? undefined : v)}>
                         <SelectTrigger className="w-[150px]">
                             <SelectValue placeholder="Estado" />
                         </SelectTrigger>
@@ -351,7 +351,7 @@ export default function TransactionsTable({ initialData }: Props) {
                     </Select>
 
                     {/* Rows */}
-                    <Select onValueChange={(v) => setRows(Number(v))}>
+                    <Select onValueChange={(v: any) => setRows(Number(v))}>
                         <SelectTrigger className="w-[120px]">
                             <SelectValue placeholder="Rows" />
                         </SelectTrigger>
@@ -456,7 +456,10 @@ export default function TransactionsTable({ initialData }: Props) {
                                 </TableCell>
 
                                 <TableCell>
-                                    {tx.counterPartNickName}
+                                    {tx.counterparty?.name}
+                                    <div className="text-xs text-muted-foreground">
+                                        {tx.counterparty?.nickName}
+                                    </div>
                                 </TableCell>
 
                                 <TableCell>
