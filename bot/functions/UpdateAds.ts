@@ -1,9 +1,9 @@
 import { BotConfig } from "@/database/models/Ads_config.js";
-import client from "../../utils/binance/index.js";
 import { getP2PMarket } from "./GetPriceMarket.js";
+import { getUserClient } from "@/utils/binance/index.js";
 
 // IMPORTA tu script de mercado (ajusta la ruta a donde lo guardaste)
-
+const client = await getUserClient();
 const bodyBuy = {
     asset: "USDT",
     fiatUnit: "VES",
@@ -22,7 +22,7 @@ const bodySell = {
 
 // ✅ Tolerancia para evitar precios repetidos en Binance
 // (Tu ejemplo usa 0.02: 530, 530.02, 530.04, ...)
-const TOLERANCE_STEP = 0.02;
+const TOLERANCE_STEP = 0.1;
 
 // Si necesitas forzar 2 decimales
 function round2(n: number) {
@@ -110,12 +110,12 @@ async function adjustSideAds(params: {
         if (!advNo) continue;
 
         // Genera precio único con tolerancia incremental
-        let target = round2(base + i * TOLERANCE_STEP);
+        let target = round2(base + i * (TOLERANCE_STEP / 100));
 
         // Por si el redondeo crea colisión: sube hasta encontrar uno libre
         while (used.has(target.toFixed(2))) {
             i++;
-            target = round2(base + i * TOLERANCE_STEP);
+            target = round2(base + i * (TOLERANCE_STEP / 100));
         }
 
         used.add(target.toFixed(2));
