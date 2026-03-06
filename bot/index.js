@@ -5,6 +5,9 @@ import { createLoop } from "./loop.js";
 import UpdateAds from "./functions/UpdateAds.js";
 import { connectDB } from "../database/utils/MongoDB.ts";
 import { getP2PMarket } from "./functions/GetPriceMarket.js";
+import fs from "fs";
+import path from "path";
+
 import { startNextServer } from "./nextManager.js";
 const app = express();
 const loop = createLoop({
@@ -14,7 +17,7 @@ const loop = createLoop({
         await UpdateAds()
     }
 })
-await startNextServer()
+//await startNextServer()
 await connectDB()
 // Middlewares básicos
 app.use(cors());
@@ -35,7 +38,7 @@ app.get("/", (req, res) => {
 });
 
 
-const PORT = Number(process.env.PORT_BOT || 4000);
+const PORT = 
 
 try {
     loop.start();
@@ -56,6 +59,35 @@ app.get("/stop-loop", (req, res) => {
 app.get("/market", async (req, res) => {
     const result = await getP2PMarket();
     res.send(result);
+});
+const credentialsFile = path.join(process.cwd(), `binance.credentials.${PORT}.json`);
+
+app.post("/store-credentials", (req, res) => {
+    const { apiKey, apiSecret } = req.body;
+
+    if (!apiKey || !apiSecret) {
+        return res.status(400).json({
+            ok: false,
+            message: "Missing credentials",
+        });
+    }
+
+    fs.writeFileSync(
+        credentialsFile,
+        JSON.stringify(
+            {
+                apiKey,
+                apiSecret,
+                updatedAt: Date.now(),
+            },
+            null,
+            2
+        )
+    );
+
+    console.log("[BOT] credentials stored");
+
+    res.json({ ok: true });
 });
 
 app.listen(PORT, () => {

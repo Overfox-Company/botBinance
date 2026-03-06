@@ -148,6 +148,17 @@ export default function BotConfig({ config = null, marketBuyAvg = null, marketSe
         } else {
             setCredentialsValid(true);
 
+            // 2️⃣ enviar al bot
+            await fetch("http://localhost:4000/store-credentials", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    apiKey,
+                    apiSecret,
+                }),
+            });
 
             localStorage.setItem(
                 "binance_credentials",

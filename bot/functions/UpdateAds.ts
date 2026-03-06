@@ -1,9 +1,10 @@
 import { BotConfig } from "@/database/models/Ads_config.js";
 import { getP2PMarket } from "./GetPriceMarket.js";
 import { getUserClient } from "@/utils/binance/index.js";
+import { getUserClientNode } from "@/utils/binance/NodeAdapter.js";
 
 // IMPORTA tu script de mercado (ajusta la ruta a donde lo guardaste)
-const client = await getUserClient();
+
 const bodyBuy = {
     asset: "USDT",
     fiatUnit: "VES",
@@ -67,7 +68,7 @@ async function updateAdPrice(advNo: string, price: number) {
         advNo: String(advNo),
         price: String(round2(price)),
     };
-
+    const client = await getUserClientNode();
     const r = await client.request({
         method: "POST",
         url: "/sapi/v1/c2c/ads/update",
@@ -180,7 +181,7 @@ const UpdateAds = async () => {
     if (avgBuy === null || avgBuy === undefined || avgSell === null || avgSell === undefined) {
         console.log("Referencia del mercado inválida (avg null).");
         return;
-    }
+    } const client = await getUserClientNode();
 
     // 2) Traer anuncios del usuario (BUY y SELL)
     const [adsBuyRes, adsSellRes] = await Promise.all([

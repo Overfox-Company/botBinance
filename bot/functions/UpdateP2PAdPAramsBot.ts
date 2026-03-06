@@ -1,6 +1,7 @@
 // <-- ajusta esta ruta a tu client real
 
-import client from "@/utils/binance";
+import { getUserClient } from "@/utils/binance";
+
 
 type AdvStatus = 1 | 3 | 4;
 
@@ -38,7 +39,7 @@ export async function updateP2PAdParams(input: UpdateP2PAdParamsInput) {
                 input.maxSingleTransAmount !== undefined ? String(input.maxSingleTransAmount) : undefined,
             // advStatus: input.advStatus,
         });
-
+        const client = await getUserClient();
         const r = await client.request({
             method: "POST",
             url: "/sapi/v1/c2c/ads/update",
