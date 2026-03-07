@@ -8,8 +8,8 @@ import { getP2PMarket } from "./functions/GetPriceMarket.js";
 import fs from "fs";
 import path from "path";
 
-import { startNextServer } from "./nextManager.js";
 const app = express();
+const PORT = Number(process.env.BOT_PORT ?? process.env.PORT_BOT) || 4000;
 const loop = createLoop({
     enabled: true,
     intervalMs: Number(process.env.TIME_TO_REFRESH) || 15000,
@@ -36,9 +36,6 @@ app.get("/health", (req, res) => {
 app.get("/", (req, res) => {
     res.send("bot ok");
 });
-
-
-const PORT = 
 
 try {
     loop.start();
@@ -84,7 +81,16 @@ app.post("/store-credentials", (req, res) => {
             2
         )
     );
+    app.delete("/delete-credentials", (req, res) => {
+        if (fs.existsSync(credentialsFile)) {
+            fs.unlinkSync(credentialsFile);
+            console.log("[BOT] credentials deleted");
+        } else {
+            console.log("[BOT] no credentials file to delete");
+        }
 
+        res.json({ ok: true });
+    });
     console.log("[BOT] credentials stored");
 
     res.json({ ok: true });

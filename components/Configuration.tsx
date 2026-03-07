@@ -41,6 +41,7 @@ type Props = {
     } | null;
     marketBuyAvg?: number | null;
     marketSellAvg?: number | null;
+    botBaseUrl: string;
 };
 function getCookie(name: string) {
     const match = document.cookie.match(
@@ -48,7 +49,7 @@ function getCookie(name: string) {
     );
     return match ? decodeURIComponent(match[2]) : null;
 }
-export default function BotConfig({ config = null, marketBuyAvg = null, marketSellAvg = null }: Props) {
+export default function BotConfig({ config = null, marketBuyAvg = null, marketSellAvg = null, botBaseUrl }: Props) {
 
     const [apiKey, setApiKey] = React.useState("");
     const [apiSecret, setApiSecret] = React.useState("");
@@ -144,12 +145,16 @@ export default function BotConfig({ config = null, marketBuyAvg = null, marketSe
 
         if (!res.ok) {
             alert(res.message);
+            await fetch(`${botBaseUrl}/delete-credentials`, {
+                method: "DELETE",
+            });
+
             setCredentialsValid(false);
         } else {
             setCredentialsValid(true);
 
             // 2️⃣ enviar al bot
-            await fetch("http://localhost:4000/store-credentials", {
+            await fetch(`${botBaseUrl}/store-credentials`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

@@ -5,10 +5,10 @@
   "type": "module",
   "main": "electron/main.js",
   "scripts": {
-    "start": "concurrently  \"tsx bot/index.js\"",
+    "start": "cross-env  node server.js",
     "build": "next build",
     "build:electron": "electron-builder",
-    "dev": "concurrently \"next dev \" \"tsx bot/index.js\"",
+    "dev": "node server.js",
     "lint": "eslint",
     "electron": "electron ./electron/main.js"
   },

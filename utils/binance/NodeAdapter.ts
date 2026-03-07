@@ -1,29 +1,27 @@
 // lib/binance/getUserClientNode.ts
 
+import fs from "fs";
+import path from "path";
 import { createClient } from "./CreateClient";
 
-type CookieMap = Record<string, string>;
+export function getUserClientNode(port: number = 4000) {
 
-function parseCookies(cookieHeader?: string): CookieMap {
-    if (!cookieHeader) return {};
-
-    return Object.fromEntries(
-        cookieHeader.split(";").map((c) => {
-            const [key, ...v] = c.trim().split("=");
-            return [key, decodeURIComponent(v.join("="))];
-        })
+    const filePath = path.join(
+        process.cwd(),
+        `binance.credentials.${port}.json`
     );
-}
 
-export function getUserClientNode(cookieHeader?: string) {
-    const cookies = parseCookies(cookieHeader);
-
-    const apiKey = cookies["binance_api_key"];
-    const apiSecret = cookies["binance_secret"];
-    console.log("Parsed cookies:", cookies);
-    if (!apiKey || !apiSecret) {
-        //      throw new Error("Binance credentials not configured");
+    if (!fs.existsSync(filePath)) {
+        throw new Error(
+            `Binance credentials not found for instance ${port}`
+        );
     }
+
+    const { apiKey, apiSecret } = JSON.parse(
+        fs.readFileSync(filePath, "utf8")
+    );
+
+    console.log(`[BOT ${port}] Loaded credentials`);
 
     return createClient({
         apiKey,
