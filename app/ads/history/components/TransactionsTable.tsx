@@ -1,7 +1,8 @@
 "use client";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { use, useEffect, useState, useTransition } from "react";
+import type { BinanceAccountOwner } from "@/actions/validateCredentials/GetBinanceAccountOwner";
+import { useEffect, useState, useTransition } from "react";
 import { GetHistoryP2P } from "@/actions/history/GetHistoryP2P";
 import { UserIcon } from '@hugeicons-pro/core-stroke-sharp';
 import { HugeiconsIcon } from '@hugeicons/react';
@@ -23,6 +24,22 @@ import { Button } from "@/components/ui/button";
 
 interface Props {
     initialData: any;
+    accountOwner: BinanceAccountOwner | null;
+}
+
+function getInitialRows(initialData: any) {
+    if (Array.isArray(initialData)) return initialData;
+    return initialData?.data ?? [];
+}
+
+function sanitizeFileNamePart(value: string) {
+    return value
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-zA-Z0-9@._-]+/g, "-")
+        .replace(/-+/g, "-")
+        .replace(/^-|-$/g, "")
+        .toLowerCase();
 }
 
 function formatNumber(value: string, decimals = 2) {
@@ -42,8 +59,8 @@ function formatDate(ms: number) {
     }).format(new Date(ms));
 }
 
-export default function TransactionsTable({ initialData }: Props) {
-    const [data, setData] = useState(initialData?.data ?? []);
+export default function TransactionsTable({ initialData, accountOwner }: Props) {
+    const [data, setData] = useState(getInitialRows(initialData));
     const [page, setPage] = useState(1);
     const [isPending, startTransition] = useTransition();
 
@@ -157,6 +174,18 @@ export default function TransactionsTable({ initialData }: Props) {
     const exportToPDF = () => {
         if (!data || data.length === 0) return;
 
+        const ownerName = accountOwner?.name || accountOwner?.nickname || "Binance User";
+       
+        const fileName = [
+            "p2p-order-history",
+            sanitizeFileNamePart(ownerName),
+            sanitizeFileNamePart(
+             accountOwner?.nickname || "user"
+            ),
+        ]
+            .filter(Boolean)
+            .join("-") + ".pdf";
+
         const doc = new jsPDF("landscape", "pt", "a4");
 
         const pageWidth = doc.internal.pageSize.getWidth();
@@ -202,9 +231,7 @@ export default function TransactionsTable({ initialData }: Props) {
         doc.setFontSize(9);
         doc.setTextColor(60);
 
-        doc.text(`Name: Hector`, marginX, 60);
-        doc.text(`User ID: 29039492`, marginX + 250, 60);
-        doc.text(`Email: hector@email.com`, marginX + 450, 60);
+        doc.text(`Name: ${ownerName}`, marginX, 60);
 
         doc.text(
             `Period (UTC+0): ${periodStart.toISOString().slice(0, 10)} to ${periodEnd
@@ -269,7 +296,9 @@ export default function TransactionsTable({ initialData }: Props) {
                 `${tx.asset} ${Number(tx.amount).toLocaleString()}`,
                 `${tx.fiatSymbol} ${Number(tx.commission).toLocaleString()}`,
                 tx.payMethodName,
-                tx.counterPartNickName,
+                [tx.counterparty?.name, tx.counterparty?.nickName]
+                    .filter(Boolean)
+                    .join("\n"),
                 tx.orderStatus,
                 new Date(tx.createTime)
                     .toISOString()
@@ -306,7 +335,7 @@ export default function TransactionsTable({ initialData }: Props) {
             );
         }
 
-        doc.save("p2p-order-history.pdf");
+        doc.save(fileName);
     };
     useEffect(() => {
         // Al cambiar filtros, volvemos a cargar la página 1
