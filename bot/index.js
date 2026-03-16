@@ -2,9 +2,9 @@ import express from "express";
 import cors from "cors";
 import "dotenv/config";
 import { createLoop } from "./loop.js";
-import UpdateAds from "./functions/UpdateAds.js";
+import UpdateAds from "./functions/UpdateAds.ts";
 import { connectDB } from "../database/utils/MongoDB.ts";
-import { getP2PMarket } from "./functions/GetPriceMarket.js";
+import { getP2PMarket } from "./functions/GetPriceMarket.ts";
 import fs from "fs";
 import path from "path";
 

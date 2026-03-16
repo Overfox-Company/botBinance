@@ -1,7 +1,7 @@
-import { BotConfig } from "@/database/models/Ads_config.js";
-import { getP2PMarket } from "./GetPriceMarket.js";
-import { getUserClient } from "@/utils/binance/index.js";
-import { getUserClientNode } from "@/utils/binance/NodeAdapter.js";
+import { BotConfig } from "@/database/models/Ads_config.ts";
+import { getP2PMarket } from "./GetPriceMarket.ts";
+import { getUserClient } from "@/utils/binance/index.ts";
+import { getUserClientNode } from "@/utils/binance/NodeAdapter.ts";
 
 // IMPORTA tu script de mercado (ajusta la ruta a donde lo guardaste)
 

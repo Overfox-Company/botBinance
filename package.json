@@ -5,11 +5,12 @@
   "type": "module",
   "main": "electron/main.js",
   "scripts": {
-    "start": "cross-env  node server.js",
+    "start": "concurrently -k -n next,bot \"next start\" \"node --import tsx/esm bot/index.js\"",
     "build": "next build",
     "build:electron": "electron-builder",
-    "dev": "node server.js",
+    "dev": "concurrently -k -n next,bot \"next dev\" \"node --import tsx/esm bot/index.js\"",
     "lint": "eslint",
+    "test:ts": "tsc --noEmit",
     "electron": "electron ./electron/main.js"
   },
   "build": {
