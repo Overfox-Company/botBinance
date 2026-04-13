@@ -2,6 +2,7 @@ import { GetHistoryP2P } from "@/actions/history/GetHistoryP2P";
 import { GetBinanceAccountOwner } from "@/actions/validateCredentials/GetBinanceAccountOwner";
 import TransactionsTable from "./components/TransactionsTable";
 
+export const dynamic = "force-dynamic";
 
 export default async function Page() {
     const [{ data }, ownerResult] = await Promise.all([

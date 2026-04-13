@@ -3,7 +3,12 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   /* config options here */
   images: {
-    domains: ["bin.bnbstatic.com"],
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "bin.bnbstatic.com",
+      },
+    ],
   },
 };
 
