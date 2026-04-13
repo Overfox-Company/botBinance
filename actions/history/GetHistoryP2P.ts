@@ -66,25 +66,27 @@ export async function GetHistoryP2P(params: GetHistoryP2PParams) {
         */
         const detailResponses = await Promise.all(
             orders.map(async (order: any) => {
+                const lookupKey = String(order.orderNumber ?? order.adOrderNo ?? "");
+
                 //     console.log("Fetching detail for order:", order);
                 try {
                     const detail = await client.request({
                         method: "POST",
                         url: "/sapi/v1/c2c/orderMatch/getUserOrderDetail",
                         data: {
-                            adOrderNo: order.orderNumber,
+                            adOrderNo: lookupKey,
                         },
                         signed: true,
                     });
 
                     return {
-                        adOrderNo: order.adOrderNo,
+                        lookupKey,
                         detail: detail.data ?? null,
                     };
                 } catch (err) {
                     console.error("detail error", err);
                     return {
-                        adOrderNo: order.orderNumber,
+                        lookupKey,
                         detail: null,
                     };
                 }
@@ -95,21 +97,29 @@ export async function GetHistoryP2P(params: GetHistoryP2PParams) {
          Crear mapa para lookup rápido
         */
         const detailMap = new Map(
-            detailResponses.map((d) => [d.adOrderNo, d.detail])
+            detailResponses.map((detailResponse) => [detailResponse.lookupKey, detailResponse.detail])
         );
 
         /*
          Normalizar estructura final
         */
         const normalized: any[] = orders.map((order: any) => {
-            const detail = detailMap.get(order.adOrderNo);
+            const lookupKey = String(order.orderNumber ?? order.adOrderNo ?? "");
+            const detail = detailMap.get(lookupKey);
+            const detailData = detail?.data ?? {};
 
             return {
                 ...order,
 
                 counterparty: {
-                    name: order.tradeType === "BUY" ? detail.data.sellerName : detail.data.buyerName,
-                    nickName: order.tradeType === "BUY" ? detail.data.sellerNickname : detail.data.buyerNickname,
+                    name:
+                        order.tradeType === "BUY"
+                            ? detailData.sellerName ?? null
+                            : detailData.buyerName ?? null,
+                    nickName:
+                        order.tradeType === "BUY"
+                            ? detailData.sellerNickname ?? null
+                            : detailData.buyerNickname ?? null,
                 },
 
                 raw: detail,

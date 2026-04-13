@@ -86,7 +86,8 @@ export default function TransactionsTable({ initialData, accountOwner }: Props) 
                     result = result.filter((tx: any) =>
                         tx.orderNumber.includes(search) ||
                         tx.advNo.includes(search) ||
-                        tx.counterPartNickName?.toLowerCase().includes(search.toLowerCase())
+                        tx.counterparty?.nickName?.toLowerCase().includes(search.toLowerCase()) ||
+                        tx.counterparty?.name?.toLowerCase().includes(search.toLowerCase())
                     );
                 }
 
@@ -115,7 +116,7 @@ export default function TransactionsTable({ initialData, accountOwner }: Props) 
             Total: `${tx.fiatSymbol} ${Number(tx.totalPrice)}`,
             Commission: `${tx.asset} ${Number(tx.commission)}`,
             Status: tx.orderStatus,
-            User: tx.counterPartNickName,
+            User: tx.counterparty?.nickName || tx.counterparty?.name || "",
             Method: tx.payMethodName,
             Date: new Date(tx.createTime).toLocaleString(),
         }));
@@ -175,12 +176,12 @@ export default function TransactionsTable({ initialData, accountOwner }: Props) 
         if (!data || data.length === 0) return;
 
         const ownerName = accountOwner?.name || accountOwner?.nickname || "Binance User";
-       
+
         const fileName = [
             "p2p-order-history",
             sanitizeFileNamePart(ownerName),
             sanitizeFileNamePart(
-             accountOwner?.nickname || "user"
+                accountOwner?.nickname || "user"
             ),
         ]
             .filter(Boolean)
