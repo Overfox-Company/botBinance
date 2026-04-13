@@ -45,8 +45,6 @@ function formatDate(ms: number) {
 
 
 export default async function Home() {
-  const botPort = process.env.BOT_PORT ?? process.env.PORT_BOT ?? "4000";
-  const botBaseUrl = `http://localhost:${botPort}`;
   const adsResponse = await GetAdversitingList();
   const { buy, sell } = adsResponse ?? { buy: null, sell: null };
   //console.log("DATA ADS:", data);
@@ -85,13 +83,14 @@ export default async function Home() {
               config={config.ok ? config.data : null}
               marketBuyAvg={m?.ok ? m.buy.avg : null}
               marketSellAvg={m?.ok ? m.sell.avg : null}
-              botBaseUrl={botBaseUrl}
             />
           </div>
 
           {/* 4 columnas: Mercado */}
           <div className="col-span-12 lg:col-span-5 h-full">
-            <MarketBanner />
+            <MarketBanner
+              refreshEveryMs={config.ok ? config.data.loopIntervalSeconds * 1000 : undefined}
+            />
           </div>
         </div>
       </main>

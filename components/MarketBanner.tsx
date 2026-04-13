@@ -40,9 +40,13 @@ export function SpreadPercent({ value }: SpreadPercentProps) {
     );
 }
 
-export default async function MarketBanner() {
+type MarketBannerProps = {
+    refreshEveryMs?: number;
+};
+
+export default async function MarketBanner({ refreshEveryMs = 15000 }: MarketBannerProps) {
     const m = await GetP2PMarket();
-    const refresh = <AutoRefresh everyMs={process.env.TIME_TO_REFRESH ? Number(process.env.TIME_TO_REFRESH) : 15000} />;
+    const refresh = <AutoRefresh everyMs={refreshEveryMs} />;
 
     if (!m?.ok) {
         return (

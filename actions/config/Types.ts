@@ -12,6 +12,9 @@ export type BotConfigDTO = {
     enabled: boolean;
     buy: SideConfig;
     sell: SideConfig;
+    loopIntervalSeconds: number;
+    buyTolerancePct: number;
+    sellTolerancePct: number;
     updatedAt?: number; // opcional, por conveniencia
 };
 
@@ -19,6 +22,9 @@ export type BotConfigPatch = Partial<{
     enabled: boolean;
     buy: Partial<SideConfig>;
     sell: Partial<SideConfig>;
+    loopIntervalSeconds: number;
+    buyTolerancePct: number;
+    sellTolerancePct: number;
 }>;
 
 

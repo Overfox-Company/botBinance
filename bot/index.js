@@ -5,20 +5,37 @@ import { createLoop } from "./loop.js";
 import UpdateAds from "./functions/UpdateAds.ts";
 import { connectDB } from "../database/utils/MongoDB.ts";
 import { getP2PMarket } from "./functions/GetPriceMarket.ts";
-import fs from "fs";
-import path from "path";
+import { migrateLegacyCredentialsToSecureStore } from "../utils/binance/CredentialStore.ts";
 
 const app = express();
 const PORT = Number(process.env.BOT_PORT ?? process.env.PORT_BOT) || 4000;
+const MIN_LOOP_INTERVAL_MS = 5000;
+const DEFAULT_LOOP_INTERVAL_MS = 15000;
+
+function normalizeLoopIntervalMs(value) {
+    const parsed = Number(value);
+
+    if (!Number.isFinite(parsed)) {
+        return DEFAULT_LOOP_INTERVAL_MS;
+    }
+
+    return Math.max(MIN_LOOP_INTERVAL_MS, Math.trunc(parsed));
+}
+
 const loop = createLoop({
     enabled: true,
-    intervalMs: Number(process.env.TIME_TO_REFRESH) || 15000,
+    intervalMs: normalizeLoopIntervalMs(Number(process.env.TIME_TO_REFRESH) || DEFAULT_LOOP_INTERVAL_MS),
     task: async () => {
-        await UpdateAds()
+        await UpdateAds({
+            syncLoopIntervalSeconds(loopIntervalSeconds) {
+                loop.update({ intervalMs: normalizeLoopIntervalMs(loopIntervalSeconds * 1000) });
+            },
+        })
     }
 })
 //await startNextServer()
 await connectDB()
+migrateLegacyCredentialsToSecureStore(PORT);
 // Middlewares básicos
 app.use(cors());
 app.use(express.json());
@@ -56,44 +73,6 @@ app.get("/stop-loop", (req, res) => {
 app.get("/market", async (req, res) => {
     const result = await getP2PMarket();
     res.send(result);
-});
-const credentialsFile = path.join(process.cwd(), `binance.credentials.${PORT}.json`);
-
-app.post("/store-credentials", (req, res) => {
-    const { apiKey, apiSecret } = req.body;
-
-    if (!apiKey || !apiSecret) {
-        return res.status(400).json({
-            ok: false,
-            message: "Missing credentials",
-        });
-    }
-
-    fs.writeFileSync(
-        credentialsFile,
-        JSON.stringify(
-            {
-                apiKey,
-                apiSecret,
-                updatedAt: Date.now(),
-            },
-            null,
-            2
-        )
-    );
-    app.delete("/delete-credentials", (req, res) => {
-        if (fs.existsSync(credentialsFile)) {
-            fs.unlinkSync(credentialsFile);
-            console.log("[BOT] credentials deleted");
-        } else {
-            console.log("[BOT] no credentials file to delete");
-        }
-
-        res.json({ ok: true });
-    });
-    console.log("[BOT] credentials stored");
-
-    res.json({ ok: true });
 });
 
 app.listen(PORT, () => {

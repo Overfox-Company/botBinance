@@ -1,13 +1,12 @@
 "use server";
 
-import { cookies } from "next/headers";
 import { createClient } from "@/utils/binance"; // factory de tu cliente
+import { writeLocalCredentials } from "@/utils/binance/CredentialStore";
 
 export async function ValidateBinanceCredentials(
     apiKey: string,
     secret: string
 ) {
-    const cookieStore = await cookies();
     try {
         if (!apiKey || !secret) {
             return {
@@ -37,19 +36,9 @@ export async function ValidateBinanceCredentials(
             };
         }
 
-        /*
-        Guardar en cookies
-        */
-
-
-        cookieStore.set("binance_api_key", apiKey, {
-            httpOnly: false,
-            path: "/",
-        });
-
-        cookieStore.set("binance_secret", secret, {
-            httpOnly: false,
-            path: "/",
+        writeLocalCredentials({
+            apiKey,
+            apiSecret: secret,
         });
 
         return {
@@ -61,8 +50,6 @@ export async function ValidateBinanceCredentials(
         };
     } catch (error: any) {
         console.error("BINANCE VALIDATION ERROR:", error?.response?.data);
-        cookieStore.delete("binance_api_key");
-        cookieStore.delete("binance_secret");
         return {
             ok: false,
             message:

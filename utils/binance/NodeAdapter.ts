@@ -1,25 +1,10 @@
 // lib/binance/getUserClientNode.ts
 
-import fs from "fs";
-import path from "path";
 import { createClient } from "./CreateClient";
+import { readLocalCredentials } from "./CredentialStore";
 
 export function getUserClientNode(port: number = 4000) {
-
-    const filePath = path.join(
-        process.cwd(),
-        `binance.credentials.${port}.json`
-    );
-
-    if (!fs.existsSync(filePath)) {
-        throw new Error(
-            `Binance credentials not found for instance ${port}`
-        );
-    }
-
-    const { apiKey, apiSecret } = JSON.parse(
-        fs.readFileSync(filePath, "utf8")
-    );
+    const { apiKey, apiSecret } = readLocalCredentials(port);
 
     console.log(`[BOT ${port}] Loaded credentials`);
 

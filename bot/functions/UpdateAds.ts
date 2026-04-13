@@ -1,6 +1,5 @@
 import { BotConfig } from "@/database/models/Ads_config.ts";
 import { getP2PMarket } from "./GetPriceMarket.ts";
-import { getUserClient } from "@/utils/binance/index.ts";
 import { getUserClientNode } from "@/utils/binance/NodeAdapter.ts";
 
 // IMPORTA tu script de mercado (ajusta la ruta a donde lo guardaste)
@@ -21,13 +20,33 @@ const bodySell = {
     rows: 100,
 };
 
-// ✅ Tolerancia para evitar precios repetidos en Binance
-// (Tu ejemplo usa 0.02: 530, 530.02, 530.04, ...)
-const TOLERANCE_STEP = 0.1;
-
 // Si necesitas forzar 2 decimales
 function round2(n: number) {
     return Math.round(n * 100) / 100;
+}
+
+function computeStepPrice(
+    previous: number,
+    mode: "above" | "below",
+    tolerancePct: number
+) {
+    const ratio = Math.max(0, tolerancePct) / 100;
+    if (ratio === 0) return round2(previous);
+
+    const raw =
+        mode === "above"
+            ? previous * (1 + ratio)
+            : previous * (1 - ratio);
+
+    return round2(Math.max(0.01, raw));
+}
+
+function nudgeUniquePrice(current: number, mode: "above" | "below") {
+    if (mode === "above") {
+        return round2(current + 0.01);
+    }
+
+    return round2(Math.max(0.01, current - 0.01));
 }
 
 function computeBasePrice(avg: number, mode: "above" | "below", offset: number) {
@@ -81,14 +100,19 @@ async function updateAdPrice(advNo: string, price: number) {
 
 type Side = "buy" | "sell";
 
+type UpdateAdsOptions = {
+    syncLoopIntervalSeconds?: (loopIntervalSeconds: number) => void;
+};
+
 async function adjustSideAds(params: {
     side: Side;
     ads: any[];
     avgPrice: number;
     mode: "above" | "below";
     offset: number;
+    tolerancePct: number;
 }) {
-    const { side, ads, avgPrice, mode, offset } = params;
+    const { side, ads, avgPrice, mode, offset, tolerancePct } = params;
 
     const base = computeBasePrice(avgPrice, mode, offset);
 
@@ -100,27 +124,28 @@ async function adjustSideAds(params: {
     const used = new Set<string>();
 
     console.log(
-        `[${side.toUpperCase()}] avg=${avgPrice} mode=${mode} offset=${offset} => base=${base} (step=${TOLERANCE_STEP})`
+        `[${side.toUpperCase()}] avg=${avgPrice} mode=${mode} offset=${offset} tolerancePct=${tolerancePct} => base=${base}`
     );
 
     let i = 0;
+    let previousTarget = base;
 
     // Lo hago secuencial para evitar rate limit y para que el step sea determinista
     for (const item of ads) {
         const advNo = getAdvNo(item);
         if (!advNo) continue;
 
-        // Genera precio único con tolerancia incremental
-        let target = round2(base + i * (TOLERANCE_STEP / 100));
+        // Aplica tolerancia porcentual en cascada tomando como referencia el anuncio anterior.
+        let target = i === 0 ? base : computeStepPrice(previousTarget, mode, tolerancePct);
 
-        // Por si el redondeo crea colisión: sube hasta encontrar uno libre
+        // Si colisiona por redondeo, ajusta 0.01 en dirección del modo.
         while (used.has(target.toFixed(2))) {
-            i++;
-            target = round2(base + i * (TOLERANCE_STEP / 100));
+            target = nudgeUniquePrice(target, mode);
         }
 
         used.add(target.toFixed(2));
         adjustedPrices.push(target);
+        previousTarget = target;
 
         const current = getCurrentPrice(item);
 
@@ -151,12 +176,14 @@ async function adjustSideAds(params: {
     };
 }
 
-const UpdateAds = async () => {
+const UpdateAds = async (options?: UpdateAdsOptions) => {
     const config = await BotConfig.findOne({});
     if (!config) {
         console.log("No se encontró la configuración del bot.");
         return;
     }
+
+    options?.syncLoopIntervalSeconds?.(Number(config.loopIntervalSeconds ?? 15));
 
     if (!config.enabled) {
         console.log("Bot deshabilitado. No se actualizan anuncios.");
@@ -212,6 +239,7 @@ const UpdateAds = async () => {
         avgPrice: Number(avgBuy),
         mode: buyCfg.mode,
         offset: Number(buyCfg.offset ?? 0),
+        tolerancePct: Number(config.buyTolerancePct ?? 0.5),
     });
 
     const sellResult = await adjustSideAds({
@@ -220,6 +248,7 @@ const UpdateAds = async () => {
         avgPrice: Number(avgSell),
         mode: sellCfg.mode,
         offset: Number(sellCfg.offset ?? 0),
+        tolerancePct: Number(config.sellTolerancePct ?? 0.5),
     });
 
     console.log("✅ Ajuste completado.");

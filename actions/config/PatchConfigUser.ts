@@ -1,6 +1,13 @@
 'use server'
 import { connectDB } from "@/database/utils/MongoDB";
-import { normalizeSide, resolveUserId } from "./Functions";
+import {
+    DEFAULT_LOOP_INTERVAL_SECONDS,
+    DEFAULT_TOLERANCE_PERCENT,
+    normalizeLoopIntervalSeconds,
+    normalizeSide,
+    normalizeTolerancePercent,
+    resolveUserId,
+} from "./Functions";
 import { BotConfigDTO, BotConfigPatch } from "./Types";
 import { BotConfig } from "@/database/models/Ads_config";
 
@@ -20,6 +27,9 @@ export async function PatchBotConfig(
                     enabled: false,
                     buy: { mode: "above", offset: 0 },
                     sell: { mode: "below", offset: 0 },
+                    loopIntervalSeconds: DEFAULT_LOOP_INTERVAL_SECONDS,
+                    buyTolerancePct: DEFAULT_TOLERANCE_PERCENT,
+                    sellTolerancePct: DEFAULT_TOLERANCE_PERCENT,
                 },
             },
             {
@@ -45,12 +55,30 @@ export async function PatchBotConfig(
             { mode: "below", offset: 0 }
         );
 
+        const nextLoopIntervalSeconds =
+            patch.loopIntervalSeconds !== undefined
+                ? normalizeLoopIntervalSeconds(patch.loopIntervalSeconds)
+                : normalizeLoopIntervalSeconds(current.loopIntervalSeconds);
+
+        const nextBuyTolerancePct =
+            patch.buyTolerancePct !== undefined
+                ? normalizeTolerancePercent(patch.buyTolerancePct)
+                : normalizeTolerancePercent(current.buyTolerancePct);
+
+        const nextSellTolerancePct =
+            patch.sellTolerancePct !== undefined
+                ? normalizeTolerancePercent(patch.sellTolerancePct)
+                : normalizeTolerancePercent(current.sellTolerancePct);
+
         const updated = await BotConfig.findOneAndUpdate(
             { userId },
             {
                 enabled: nextEnabled,
                 buy: nextBuy,
                 sell: nextSell,
+                loopIntervalSeconds: nextLoopIntervalSeconds,
+                buyTolerancePct: nextBuyTolerancePct,
+                sellTolerancePct: nextSellTolerancePct,
             },
             { new: true, lean: true }
         );
@@ -65,6 +93,9 @@ export async function PatchBotConfig(
                 mode: updated.sell.mode,
                 offset: Number(updated.sell.offset),
             },
+            loopIntervalSeconds: normalizeLoopIntervalSeconds(updated.loopIntervalSeconds),
+            buyTolerancePct: normalizeTolerancePercent(updated.buyTolerancePct),
+            sellTolerancePct: normalizeTolerancePercent(updated.sellTolerancePct),
             updatedAt: updated.updatedAt
                 ? new Date(updated.updatedAt).getTime()
                 : Date.now(),

@@ -11,6 +11,12 @@ import { PatchBotConfig } from "@/actions/config/PatchConfigUser";
 import { useEffect } from "react";
 import { ValidateBinanceCredentials } from "@/actions/validateCredentials/ValidateCredentials";
 import { useRouter } from "next/navigation";
+import {
+    DEFAULT_LOOP_INTERVAL_SECONDS,
+    DEFAULT_TOLERANCE_PERCENT,
+    MIN_LOOP_INTERVAL_SECONDS,
+    MIN_TOLERANCE_PERCENT,
+} from "@/actions/config/Functions";
 import { HugeiconsIcon } from '@hugeicons/react';
 import { CheckmarkCircle01Icon } from '@hugeicons-pro/core-solid-rounded';
 import { CancelCircleIcon } from '@hugeicons-pro/core-solid-rounded';
@@ -38,18 +44,23 @@ type Props = {
         enabled: boolean;
         buy: { mode: SideMode; offset: number };
         sell: { mode: SideMode; offset: number };
+        loopIntervalSeconds: number;
+        buyTolerancePct: number;
+        sellTolerancePct: number;
     } | null;
     marketBuyAvg?: number | null;
     marketSellAvg?: number | null;
-    botBaseUrl: string;
 };
-function getCookie(name: string) {
-    const match = document.cookie.match(
-        new RegExp("(^| )" + name + "=([^;]+)")
-    );
-    return match ? decodeURIComponent(match[2]) : null;
+
+function clampLoopIntervalSeconds(value: number | null) {
+    if (value === null) {
+        return DEFAULT_LOOP_INTERVAL_SECONDS;
+    }
+
+    return Math.max(MIN_LOOP_INTERVAL_SECONDS, Math.trunc(value));
 }
-export default function BotConfig({ config = null, marketBuyAvg = null, marketSellAvg = null, botBaseUrl }: Props) {
+
+export default function BotConfig({ config = null, marketBuyAvg = null, marketSellAvg = null }: Props) {
 
     const [apiKey, setApiKey] = React.useState("");
     const [apiSecret, setApiSecret] = React.useState("");
@@ -63,9 +74,27 @@ export default function BotConfig({ config = null, marketBuyAvg = null, marketSe
     const [sellMode, setSellMode] = React.useState<SideMode>(config?.sell.mode ?? "below");
     const [buyOffsetRaw, setBuyOffsetRaw] = React.useState(config?.buy.offset.toString() ?? "");
     const [sellOffsetRaw, setSellOffsetRaw] = React.useState(config?.sell.offset.toString() ?? "");
+    const [loopIntervalRaw, setLoopIntervalRaw] = React.useState(
+        String(config?.loopIntervalSeconds ?? DEFAULT_LOOP_INTERVAL_SECONDS)
+    );
+    const [buyToleranceRaw, setBuyToleranceRaw] = React.useState(
+        String(config?.buyTolerancePct ?? DEFAULT_TOLERANCE_PERCENT)
+    );
+    const [sellToleranceRaw, setSellToleranceRaw] = React.useState(
+        String(config?.sellTolerancePct ?? DEFAULT_TOLERANCE_PERCENT)
+    );
+    const [statusMessage, setStatusMessage] = React.useState<string | null>(null);
 
     const buyOffset = toNumberOrNull(buyOffsetRaw);
     const sellOffset = toNumberOrNull(sellOffsetRaw);
+    const loopIntervalCandidate = toNumberOrNull(loopIntervalRaw);
+    const loopIntervalSeconds = clampLoopIntervalSeconds(loopIntervalCandidate);
+    const loopIntervalHasError =
+        loopIntervalCandidate !== null && loopIntervalCandidate < MIN_LOOP_INTERVAL_SECONDS;
+    const buyToleranceCandidate = toNumberOrNull(buyToleranceRaw);
+    const sellToleranceCandidate = toNumberOrNull(sellToleranceRaw);
+    const buyTolerancePct = Math.max(MIN_TOLERANCE_PERCENT, buyToleranceCandidate ?? DEFAULT_TOLERANCE_PERCENT);
+    const sellTolerancePct = Math.max(MIN_TOLERANCE_PERCENT, sellToleranceCandidate ?? DEFAULT_TOLERANCE_PERCENT);
 
     const buyTarget = computeTarget(marketBuyAvg, buyOffset, buyMode);
     const sellTarget = computeTarget(marketSellAvg, sellOffset, sellMode);
@@ -113,64 +142,52 @@ export default function BotConfig({ config = null, marketBuyAvg = null, marketSe
         PatchBotConfig({
             buy: { mode: buyMode, offset: buyOffset ?? 0 },
             sell: { mode: sellMode, offset: sellOffset ?? 0 },
+            loopIntervalSeconds,
+            buyTolerancePct,
+            sellTolerancePct,
         }).then((res: any) => {
             if (!res.ok) {
                 alert("Error al guardar configuración: " + res.message);
                 console.log("EDIT ERR:", res.message);
+            } else {
+                setLoopIntervalRaw(String(res.data.loopIntervalSeconds));
+                setBuyToleranceRaw(String(res.data.buyTolerancePct));
+                setSellToleranceRaw(String(res.data.sellTolerancePct));
             }
             setSaving(false);
         });
     };
     useEffect(() => {
-        const storedKey = getCookie("binance_api_key");
-        const storedSecret = getCookie("binance_secret");
-
-        if (storedKey && storedSecret) {
-            setApiKey(storedKey);
-            setApiSecret(storedSecret);
-            setCredentialsValid(true);
-        }
+        fetch("/api/binance/credentials", { cache: "no-store" })
+            .then(async (response) => {
+                const result = await response.json();
+                setCredentialsValid(Boolean(result?.configured));
+            })
+            .catch(() => {
+                setCredentialsValid(false);
+            });
     }, []);
     useEffect(() => {
         const timeoutId = setTimeout(() => {
             onEdit();
         }, 1000);
         return () => clearTimeout(timeoutId);
-    }, [buyMode, sellMode, buyOffsetRaw, sellOffsetRaw]);
+    }, [buyMode, sellMode, buyOffsetRaw, sellOffsetRaw, loopIntervalRaw, buyToleranceRaw, sellToleranceRaw]);
     const router = useRouter();
     async function validateCredentials() {
         setValidating(true);
+        setStatusMessage(null);
 
         const res: any = await ValidateBinanceCredentials(apiKey, apiSecret);
 
         if (!res.ok) {
             alert(res.message);
-            await fetch(`${botBaseUrl}/delete-credentials`, {
-                method: "DELETE",
-            });
-
             setCredentialsValid(false);
         } else {
             setCredentialsValid(true);
-
-            // 2️⃣ enviar al bot
-            await fetch(`${botBaseUrl}/store-credentials`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    apiKey,
-                    apiSecret,
-                }),
-            });
-
-            localStorage.setItem(
-                "binance_credentials",
-                JSON.stringify({ apiKey, apiSecret })
-            );
-
-
+            setApiKey("");
+            setApiSecret("");
+            setStatusMessage("Credenciales guardadas localmente de forma segura.");
         }
 
         setValidating(false);
@@ -214,6 +231,12 @@ export default function BotConfig({ config = null, marketBuyAvg = null, marketSe
                         />
                     )}
                 </div>
+
+                <div className="text-xs text-muted-foreground">
+                    {statusMessage ?? (credentialsValid
+                        ? "Credenciales almacenadas en un store local cifrado dentro del proyecto."
+                        : "Las credenciales no se exponen al navegador y no se guardan en cookies ni localStorage.")}
+                </div>
             </div>
             <div className="flex items-start justify-between gap-4">
                 <div className="space-y-1">
@@ -250,6 +273,64 @@ export default function BotConfig({ config = null, marketBuyAvg = null, marketSe
             </div>
 
             <Separator />
+
+            <div className="space-y-2 rounded-md border p-3 bg-background/60">
+                <Label htmlFor="loop-interval">Tiempo del loop y refresco</Label>
+
+                <div className="flex flex-wrap items-center gap-3">
+                    <Input
+                        id="loop-interval"
+                        type="number"
+                        min={MIN_LOOP_INTERVAL_SECONDS}
+                        step={1}
+                        className="w-[160px]"
+                        value={loopIntervalRaw}
+                        onChange={(e) => setLoopIntervalRaw(e.target.value)}
+                    />
+
+                    <span className="text-sm text-muted-foreground">
+                        Segundos entre cada ejecución del bot y el auto-refresh web.
+                    </span>
+                </div>
+
+                <div className={`text-xs ${loopIntervalHasError ? "text-red-500" : "text-muted-foreground"}`}>
+                    {loopIntervalHasError
+                        ? `El mínimo permitido es ${MIN_LOOP_INTERVAL_SECONDS} segundos. Se guardará como ${MIN_LOOP_INTERVAL_SECONDS}.`
+                        : `Mínimo ${MIN_LOOP_INTERVAL_SECONDS} segundos. Valor actual: ${loopIntervalSeconds}s.`}
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                    <div className="space-y-1">
+                        <Label htmlFor="buy-tolerance">Tolerancia % compra</Label>
+                        <Input
+                            id="buy-tolerance"
+                            type="number"
+                            min={MIN_TOLERANCE_PERCENT}
+                            step={0.1}
+                            className="w-[160px]"
+                            value={buyToleranceRaw}
+                            onChange={(e) => setBuyToleranceRaw(e.target.value)}
+                        />
+                    </div>
+
+                    <div className="space-y-1">
+                        <Label htmlFor="sell-tolerance">Tolerancia % venta</Label>
+                        <Input
+                            id="sell-tolerance"
+                            type="number"
+                            min={MIN_TOLERANCE_PERCENT}
+                            step={0.1}
+                            className="w-[160px]"
+                            value={sellToleranceRaw}
+                            onChange={(e) => setSellToleranceRaw(e.target.value)}
+                        />
+                    </div>
+                </div>
+
+                <div className="text-xs text-muted-foreground">
+                    Se aplica en cascada por anuncio respecto al anterior. Ejemplo con 0.5% por encima: 630 → 633.15.
+                </div>
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Comprar */}

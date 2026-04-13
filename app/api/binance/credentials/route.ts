@@ -1,23 +1,24 @@
 // app/api/binance/credentials/route.ts
 
-import { cookies } from "next/headers";
+import {
+    clearLocalCredentials,
+    getLocalCredentialStatus,
+} from "@/utils/binance/CredentialStore";
 
 export async function GET() {
-    const cookieStore = await cookies();
-
-    const apiKey = cookieStore.get("binance_api_key")?.value;
-    const apiSecret = cookieStore.get("binance_secret")?.value;
-
-    if (!apiKey || !apiSecret) {
-        return Response.json(
-            { ok: false, message: "Missing credentials" },
-            { status: 401 }
-        );
-    }
+    const status = getLocalCredentialStatus();
 
     return Response.json({
         ok: true,
-        apiKey,
-        apiSecret,
+        configured: status.configured,
+        updatedAt: status.updatedAt,
+    });
+}
+
+export async function DELETE() {
+    clearLocalCredentials();
+
+    return Response.json({
+        ok: true,
     });
 }

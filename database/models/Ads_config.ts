@@ -17,6 +17,9 @@ const BotConfigSchema = new Schema(
         enabled: { type: Boolean, default: false },
         buy: { type: SideConfigSchema, required: true },
         sell: { type: SideConfigSchema, required: true },
+        loopIntervalSeconds: { type: Number, required: true, default: 15, min: 5 },
+        buyTolerancePct: { type: Number, required: true, default: 0.5, min: 0 },
+        sellTolerancePct: { type: Number, required: true, default: 0.5, min: 0 },
     },
     { timestamps: true }
 );

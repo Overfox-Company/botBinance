@@ -1,7 +1,13 @@
 "use server";
 
 import { connectDB } from "@/database/utils/MongoDB";
-import { resolveUserId } from "./Functions";
+import {
+    DEFAULT_LOOP_INTERVAL_SECONDS,
+    DEFAULT_TOLERANCE_PERCENT,
+    normalizeLoopIntervalSeconds,
+    normalizeTolerancePercent,
+    resolveUserId,
+} from "./Functions";
 import { BotConfigDTO } from "./Types";
 import { BotConfig } from "@/database/models/Ads_config";
 
@@ -22,6 +28,9 @@ export async function GetBotConfig(): Promise<
                     enabled: false,
                     buy: { mode: "above", offset: 0 },
                     sell: { mode: "below", offset: 0 },
+                    loopIntervalSeconds: DEFAULT_LOOP_INTERVAL_SECONDS,
+                    buyTolerancePct: DEFAULT_TOLERANCE_PERCENT,
+                    sellTolerancePct: DEFAULT_TOLERANCE_PERCENT,
                 },
             },
             {
@@ -43,6 +52,9 @@ export async function GetBotConfig(): Promise<
                 mode: (doc.sell?.mode ?? "below") as any,
                 offset: Number(doc.sell?.offset ?? 0),
             },
+            loopIntervalSeconds: normalizeLoopIntervalSeconds(doc.loopIntervalSeconds),
+            buyTolerancePct: normalizeTolerancePercent(doc.buyTolerancePct),
+            sellTolerancePct: normalizeTolerancePercent(doc.sellTolerancePct),
             updatedAt: doc.updatedAt ? new Date(doc.updatedAt).getTime() : Date.now(),
         };
 

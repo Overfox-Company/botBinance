@@ -1,13 +1,10 @@
 // lib/binance/getUserClientNext.ts
 
-import { cookies } from "next/headers";
 import { createClient } from "./CreateClient";
+import { readLocalCredentials } from "./CredentialStore";
 
 export async function getUserClientNext() {
-    const cookieStore = await cookies();
-
-    const apiKey = cookieStore.get("binance_api_key")?.value;
-    const apiSecret = cookieStore.get("binance_secret")?.value;
+    const { apiKey, apiSecret } = readLocalCredentials();
 
     if (!apiKey || !apiSecret) {
         throw new Error("Binance credentials not configured");
